@@ -1,0 +1,31 @@
+package roundrobin
+
+import (
+	"math/rand"
+	"time"
+
+	"github.com/miekg/dns"
+)
+
+type Random struct {
+}
+
+func NewRandom() *Random {
+	return &Random{}
+}
+
+func (r *Random) Shuffle(answer []dns.RR) []dns.RR{
+	var shuffled []dns.RR
+	var skipped []dns.RR
+	for _, a := range answer {
+		switch a.Header().Rrtype {
+		case dns.TypeA, dns.TypeAAAA:
+			shuffled = append(shuffled, a)
+		default:
+			skipped = append(skipped, a)
+		}
+	}
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(shuffled), func(i, j int) { shuffled[i], shuffled[j] = shuffled[j], shuffled[i] })
+	return append(shuffled,skipped...)
+}
