@@ -35,3 +35,11 @@ pb:
 clean:
 	go clean
 	rm -f coredns
+
+.PHONY: build
+build:
+	go build -o ./coredns
+
+.PHONY: run
+run: build
+	./coredns -conf Corefile -p 5053

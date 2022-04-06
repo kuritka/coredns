@@ -34,6 +34,7 @@ var Directives = []string{
 	"any",
 	"chaos",
 	"loadbalance",
+	"roundrobin",
 	"cache",
 	"rewrite",
 	"header",
