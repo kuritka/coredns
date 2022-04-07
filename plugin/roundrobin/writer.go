@@ -13,6 +13,7 @@ type MessageWriter struct {
 
 func NewMessageWriter(w dns.ResponseWriter, msg *dns.Msg, strategy shuffler) (*MessageWriter, error) {
 	state := request.Request{W: w, Req: msg}
+	log.Infof("source IP: %s", state.IP())
 	return &MessageWriter{
 		clientIP: state.IP(),
 		ResponseWriter: w,

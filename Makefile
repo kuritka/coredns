@@ -8,6 +8,11 @@ GOPATH?=$(HOME)/go
 MAKEPWD:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 CGO_ENABLED?=0
 
+ORG_NAME=kuritka
+PROVIDER_NAME=coredns
+
+
+
 .PHONY: all
 all: coredns
 
@@ -43,3 +48,18 @@ build:
 .PHONY: run
 run: build
 	./coredns -conf Corefile -p 5053
+
+image: build
+	docker build . -t $(ORG_NAME)/$(PROVIDER_NAME):$(VERSION) -f Dockerfile
+
+image-push:
+	# docker push $(ORG_NAME)/$(PROVIDER_NAME):$(VERSION)
+	k3d image import $(ORG_NAME)/$(PROVIDER_NAME):$(VERSION) -c abc
+
+apply:
+	kubectl delete -f infrastructure/infra.yaml
+	kubectl apply -f infrastructure/infra.yaml
+
+deploy: build image image-push apply
+
+VERSION=v0.0.4

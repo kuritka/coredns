@@ -1,5 +1,5 @@
 example.com {
-    hosts /Users/ab011th/etchosts
+    hosts hostsfile
     log
     roundrobin random
 }
