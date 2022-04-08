@@ -1,7 +1,7 @@
 # Dockerfile
 # Build the manager binary
 FROM golang:1.18 as builder
-
+ARG EXPOSE_PORT=5053
 WORKDIR /workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
@@ -28,5 +28,5 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/coredns .
 USER 65532:65532
-EXPOSE 5053 5053/udp
+EXPOSE $EXPOSE_PORT $EXPOSE_PORT/udp
 ENTRYPOINT ["/coredns"]

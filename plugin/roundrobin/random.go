@@ -14,10 +14,10 @@ func NewRandom() *Random {
 	return &Random{}
 }
 
-func (r *Random) Shuffle(answer []dns.RR) []dns.RR{
+func (r *Random) Shuffle(msg *dns.Msg) []dns.RR{
 	var shuffled []dns.RR
 	var skipped []dns.RR
-	for _, a := range answer {
+	for _, a := range  msg.Answer {
 		switch a.Header().Rrtype {
 		case dns.TypeA, dns.TypeAAAA:
 			shuffled = append(shuffled, a)

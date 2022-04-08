@@ -22,7 +22,7 @@ func setup(c *caddy.Controller) error {
 		return plugin.Error(pluginName, err)
 	}
 	dnsserver.GetConfig(c).AddPlugin(func(next plugin.Handler) plugin.Handler {
-		return roundRobin{Next: next, strategy: strategy}
+		return New(next, strategy)
 	})
 	return nil
 }
