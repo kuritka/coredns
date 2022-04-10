@@ -4,7 +4,7 @@ metadata:
   name: coredns
 data:
   Corefile: |
-    example.com {
+    example.com:5053 {
         hosts /opt/data/hostsfile
         log
         roundrobin random
@@ -47,7 +47,7 @@ spec:
       containers:
       - name: coredns
         image: kuritka/coredns:v0.0.4
-        args: ["-p","5053","-conf", "/opt/data/Corefile"]
+        args: ["-conf", "/opt/data/Corefile"]
         volumeMounts:
         - name: config-files
           mountPath: /opt/data

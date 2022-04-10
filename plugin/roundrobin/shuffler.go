@@ -1,7 +1,12 @@
 package roundrobin
 
-import "github.com/miekg/dns"
+import (
+	"github.com/coredns/coredns/request"
+	"github.com/miekg/dns"
+)
 
 type shuffler interface {
-	Shuffle(msg *dns.Msg) []dns.RR
+	// Shuffle runs round-robin algorithm.
+	// state contains incoming request while *msg is response modified by other plugins
+	Shuffle(req request.Request, msg *dns.Msg) []dns.RR
 }

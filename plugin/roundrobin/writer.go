@@ -8,14 +8,14 @@ import (
 type MessageWriter struct {
 	dns.ResponseWriter
 	strategy shuffler
-	clientIP string
+	state request.Request
 }
 
+
+
 func NewMessageWriter(w dns.ResponseWriter, msg *dns.Msg, strategy shuffler) (*MessageWriter, error) {
-	state := request.Request{W: w, Req: msg}
-	log.Infof("source IP: %s", state.IP())
 	return &MessageWriter{
-		clientIP: state.IP(),
+		state: request.Request{W: w, Req: msg},
 		ResponseWriter: w,
 		strategy: strategy,
 	}, nil
@@ -32,7 +32,7 @@ func (r *MessageWriter) WriteMsg(msg *dns.Msg) error {
 		return r.ResponseWriter.WriteMsg(msg)
 	}
 		//fmt.Println(msg.Extra[0].(*dns.OPT).Option)
-	msg.Answer = r.strategy.Shuffle(msg)
+	msg.Answer = r.strategy.Shuffle(r.state, msg)
 
 	return r.ResponseWriter.WriteMsg(msg)
 }

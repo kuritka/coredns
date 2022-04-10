@@ -2,9 +2,7 @@ package roundrobin
 
 import (
 	"context"
-	"fmt"
 	"github.com/coredns/coredns/plugin"
-	"github.com/coredns/coredns/request"
 	"github.com/miekg/dns"
 )
 
@@ -36,9 +34,4 @@ func (rr *RoundRobin) ServeDNS(ctx context.Context, w dns.ResponseWriter, msg *d
 
 func (rr *RoundRobin) Name() string {
 	return pluginName
-}
-
-func (rr *RoundRobin) Metadata(ctx context.Context, state request.Request) context.Context {
-	fmt.Println(state.Req.Extra)
-	return ctx
 }

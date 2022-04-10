@@ -1,6 +1,7 @@
 package roundrobin
 
 import (
+	"github.com/coredns/coredns/request"
 	"math/rand"
 	"time"
 
@@ -14,7 +15,7 @@ func NewRandom() *Random {
 	return &Random{}
 }
 
-func (r *Random) Shuffle(msg *dns.Msg) []dns.RR{
+func (r *Random) Shuffle(req request.Request, msg *dns.Msg) []dns.RR{
 	var shuffled []dns.RR
 	var skipped []dns.RR
 	for _, a := range  msg.Answer {
