@@ -22,7 +22,11 @@ func newState(request *dns.Msg, response *dns.Msg) (s *state) {
 	if request == nil || response == nil {
 		return
 	}
-	s = &state{}
+	s = &state{
+		requestA: map[string]bool{},
+		responseA: map[string]dns.RR{},
+		responseNoA: []dns.RR{},
+	}
 
 	// extracting records from client request
 	for _, e := range request.Extra {
@@ -46,9 +50,9 @@ func newState(request *dns.Msg, response *dns.Msg) (s *state) {
 	for _, a := range  response.Answer {
 		switch a.Header().Rrtype {
 		case dns.TypeA:
-			s.responseA[a.(*dns.A).String()] = a
+			s.responseA[a.(*dns.A).A.String()] = a
 		case dns.TypeAAAA:
-			s.responseA[a.(*dns.AAAA).String()] = a
+			s.responseA[a.(*dns.AAAA).AAAA.String()] = a
 		default:
 			s.responseNoA = append(s.responseNoA, a)
 		}
@@ -66,19 +70,20 @@ func newState(request *dns.Msg, response *dns.Msg) (s *state) {
 func (s *state) normalize()  *state {
 	var newIPs []string
 
-	// append if request IP exist in response
+	// append only such IP which exist in response
 	for _, ip := range s.IPs {
 		if _, found := s.responseA[ip]; found {
 			newIPs = append(newIPs, ip)
 		}
 	}
 
-	// append to the end of the IP list new records which doesn't exist in request but exist in response.
+	// to the end of the IP list append new records which doesn't exist in request but exist in response.
 	for ip := range s.responseA {
 		if !s.requestA[ip] {
 			newIPs = append(newIPs, ip)
 		}
 	}
+
 	s.IPs = newIPs
 	return s
 }
@@ -94,6 +99,7 @@ func (s *state) rotate() *state {
 	return s
 }
 
+// getAnswers recreates Answer slice from original answers
 func (s *state) getAnswers() []dns.RR{
 	var shuffled []dns.RR
 	for _, ip  := range s.IPs {
