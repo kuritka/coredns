@@ -40,6 +40,8 @@ func parse(c *caddy.Controller) (shuffler,  error) {
 			return nil, fmt.Errorf("not implemented %s", args[0])
 		case strategyRandom:
 			return NewRandom(), nil
+		case strategySubnet:
+			return NewSubnet(), nil
 		}
 	}
 	return nil, fmt.Errorf("unknown roundrobin type")

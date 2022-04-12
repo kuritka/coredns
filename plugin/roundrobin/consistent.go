@@ -13,6 +13,6 @@ func NewConsistent() *Consistent {
 }
 
 func (r *Consistent) Shuffle(req request.Request, msg *dns.Msg) []dns.RR{
-	return newState(req.Req, msg).updateState().rotate().getAnswers()
+	return newStateless(req.Req, msg).updateState().rotate().getAnswers()
 }
 

@@ -15,6 +15,7 @@ const (
 	strategyWeight     = "weight"
 	strategyConsistent = "consistent"
 	strategyRandom     = "random"
+	strategySubnet     = "subnet"
 )
 
 func New(next  plugin.Handler, strategy shuffler) *RoundRobin{

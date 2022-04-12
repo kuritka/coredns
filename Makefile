@@ -57,7 +57,7 @@ image-push:
 	k3d image import $(ORG_NAME)/$(PROVIDER_NAME):$(VERSION) -c abc
 
 apply:
-	kubectl delete -f infrastructure/infra.yaml
+	#kubectl delete -f infrastructure/infra.yaml
 	kubectl apply -f infrastructure/infra.yaml
 
 deploy: build image image-push apply

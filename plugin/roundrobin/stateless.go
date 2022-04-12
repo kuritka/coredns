@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-type state struct {
+type stateless struct {
 	IPs    []string `json:"ip"`
 	// IPs converted into map
 	requestA map[string]bool
@@ -16,12 +16,12 @@ type state struct {
 	responseNoA []dns.RR
 }
 
-func newState(request *dns.Msg, response *dns.Msg) (s *state) {
+func newStateless(request *dns.Msg, response *dns.Msg) (s *stateless) {
 	const identifierPrefix ="_rr_state="
 	if request == nil || response == nil {
 		return
 	}
-	s = &state{
+	s = &stateless{
 		requestA: map[string]bool{},
 		responseA: map[string]dns.RR{},
 		responseNoA: []dns.RR{},
@@ -63,10 +63,10 @@ func newState(request *dns.Msg, response *dns.Msg) (s *state) {
 	return
 }
 
-// updateState compare state records with response message records
-// and cuts removed records or append new records to state
+// updateState compare stateless records with response message records
+// and cuts removed records or append new records to stateless
 // updateState keeps records in the same order as they ar defined in tghe IPs field.
-func (s *state) updateState()  *state {
+func (s *stateless) updateState()  *stateless {
 	var newIPs []string
 
 	// append only such IP which exist in response
@@ -88,7 +88,7 @@ func (s *state) updateState()  *state {
 }
 
 // rotate performs a cyclic rotation of the IPs records
-func (s *state) rotate() *state {
+func (s *stateless) rotate() *stateless {
 	var newIPs []string
 	l := len(s.IPs)
 	for i := range s.IPs {
@@ -99,7 +99,7 @@ func (s *state) rotate() *state {
 }
 
 // getAnswers recreates Answer slice from original answers
-func (s *state) getAnswers() []dns.RR{
+func (s *stateless) getAnswers() []dns.RR{
 	var shuffled []dns.RR
 	for _, ip  := range s.IPs {
 		shuffled = append(shuffled, s.responseA[ip])
