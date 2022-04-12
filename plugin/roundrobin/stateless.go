@@ -64,10 +64,10 @@ func newState(request *dns.Msg, response *dns.Msg) (s *state) {
 	return
 }
 
-// normalize compare state records with response message records
+// updateState compare state records with response message records
 // and cuts removed records or append new records to state
-// normalize keeps records in the same order as they ar defined in tghe IPs field.
-func (s *state) normalize()  *state {
+// updateState keeps records in the same order as they ar defined in tghe IPs field.
+func (s *state) updateState()  *state {
 	var newIPs []string
 
 	// append only such IP which exist in response
