@@ -7,7 +7,6 @@ import (
 )
 
 type state struct {
-	Family uint16   `json:"type"`
 	IPs    []string `json:"ip"`
 	// IPs converted into map
 	requestA map[string]bool
