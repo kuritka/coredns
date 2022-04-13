@@ -1,5 +1,8 @@
 example.com {
     hosts  /Users/ab011th/etchosts
     log
-    roundrobin consistent
+}
+myhost.com {
+    hosts  /Users/ab011th/etchosts
+    log
 }

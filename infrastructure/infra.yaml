@@ -7,14 +7,40 @@ data:
     example.com:5053 {
         hosts /opt/data/hostsfile
         log
-        roundrobin random
+        roundrobin subnet
+    }
+    myhost.com:5053 {
+        hosts  /opt/data/hostsfile
+        log
+        roundrobin consistent
     }
   hostsfile: |
-    1.1.1.1 cloud.example.com
-    3.3.3.3 cloud.example.com
-    2.2.2.2 cloud.example.com
+    10.0.0.1 cloud.example.com
+    10.0.0.2 cloud.example.com
+    10.0.0.3 cloud.example.com
+    10.1.1.1 cloud.example.com
+    10.1.1.2 cloud.example.com
+    10.1.1.3 cloud.example.com
+    10.2.2.1 cloud.example.com
+    10.2.2.2 cloud.example.com
+    10.2.2.3 cloud.example.com
     2001:502:f3ff::e8 cloud.example.com
     2610:a1:1014::e8 cloud.example.com
+
+    192.168.0.1 test.example.com
+    192.168.0.2 test.example.com
+    192.168.0.3 test.example.com
+    3001:502:f3ff::aa test.example.com
+    3610:a1:1014::ab test.example.com
+
+    200.0.0.1 myhost.com
+    200.0.0.2 myhost.com
+    200.0.0.3 myhost.com
+    200.0.0.4 myhost.com
+    4001:502:f3ff::88 myhost.com
+    4001:a1:1014::89 myhost.com
+    4001:a1:1014::8a myhost.com
+    4001:a1:1014::8b myhost.com
 ---
 apiVersion: v1
 kind: Service
