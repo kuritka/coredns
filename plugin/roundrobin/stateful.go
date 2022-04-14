@@ -20,9 +20,13 @@ type key string
 type question string
 
 type state struct {
-	timestamp 	time.Time
-	a []string
-	aaaa []string
+	timestamp time.Time
+	ip        []string
+}
+
+type inner struct {
+	ip map[string]bool
+	reqip map[string]bool
 }
 
 type stateful struct {
@@ -35,18 +39,31 @@ func newStateful() *stateful {
 	}
 }
 
-func (s *stateful) handle(req *request.Request) error {
+func (s *stateful) handle(req *request.Request, res *dns.Msg) (rr []dns.RR, err error) {
 	if req == nil {
-		return fmt.Errorf("nil request")
+		err = fmt.Errorf("nil request")
+		return
 	}
-	s.updateState(req)
-	return nil
+	if len(req.Req.Question) == 0 {
+		err = fmt.Errorf("empty request question")
+		return
+	}
+	return s.updateState(req, res)
 }
 
-func (s *stateful) updateState(req *request.Request) {
+func (s *stateful) updateState(req *request.Request, res *dns.Msg) (answer []dns.RR, err error){
+	if len(req.Req.Question) == 0 {
+		err = fmt.Errorf("empty question field")
+		return
+	}
+	q := question(req.Req.Question[0].Name)
 	k := s.key(req)
-	s.state[k] = s.newState(req.Req)
-
+	responseA, responseNoA := parseAnswerSection(res.Answer)
+	s.state[k] = s.refresh(q, responseA)
+	for _, ip := range s.state[k][q].ip {
+		answer = append(answer, responseA[ip])
+	}
+	return append(answer, responseNoA...), nil
 }
 
 func (s *stateful) key(req *request.Request) key {
@@ -72,11 +89,37 @@ func (s *stateful) readSubnet(req *dns.Msg) string {
 	return ""
 }
 
-func (s *stateful) newState(req *dns.Msg) (m map[question]state) {
-	//todo:
+func (s *stateful) refresh(q question, responseA map[string]dns.RR) (m map[question]state) {
 	m = make(map[question]state)
-	m["0"] = state{
-		timestamp: time.Now(),
+	st, found := m[q]
+	if !found {
+		st = state {
+			ip:   []string{},
+		}
 	}
+	st.timestamp = time.Now()
+	st.updateState(responseA)
+	st.ip = rotate(st.ip)
+	m[q] = st
 	return
+}
+
+func (s *state) updateState(responseA map[string]dns.RR) {
+	var newIPs []string
+	currentA := ipsToSet(s.ip)
+
+	// append only such IP which exist in response
+	for _, ip := range s.ip {
+		if _, found := responseA[ip]; found {
+			newIPs = append(newIPs, ip)
+		}
+	}
+
+	// to the end of the IP list append new records which doesn't exist in request but exist in response.
+	for ip := range responseA {
+		if !currentA[ip] {
+			newIPs = append(newIPs, ip)
+		}
+	}
+	s.ip = newIPs
 }

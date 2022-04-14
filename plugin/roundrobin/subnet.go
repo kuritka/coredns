@@ -15,7 +15,7 @@ func NewSubnet() *Subnet {
 	}
 }
 
-func (s *Subnet) Shuffle(req request.Request, msg *dns.Msg) []dns.RR {
-	_ = s.state.handle(&req)
-	return nil
+func (s *Subnet) Shuffle(req request.Request, res *dns.Msg) (rr []dns.RR) {
+	rr, _ = s.state.handle(&req, res)
+	return
 }

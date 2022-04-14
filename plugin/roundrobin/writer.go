@@ -31,7 +31,7 @@ func (r *MessageWriter) WriteMsg(msg *dns.Msg) error {
 	if q.Qtype == dns.TypeAXFR || q.Qtype == dns.TypeIXFR {
 		return r.ResponseWriter.WriteMsg(msg)
 	}
-		//fmt.Println(msg.Extra[0].(*dns.OPT).Option)
+
 	msg.Answer = r.strategy.Shuffle(r.state, msg)
 
 	return r.ResponseWriter.WriteMsg(msg)
