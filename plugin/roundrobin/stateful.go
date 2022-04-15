@@ -59,10 +59,11 @@ func (s *stateful) updateState(req *request.Request, res *dns.Msg) (answer []dns
 	q := question(req.Req.Question[0].Name)
 	k := s.key(req)
 	responseA, responseNoA := parseAnswerSection(res.Answer)
-	s.state[k] = s.refresh(q, responseA)
+	s.refresh(k, q, responseA)
 	for _, ip := range s.state[k][q].ip {
 		answer = append(answer, responseA[ip])
 	}
+	fmt.Println(s.state)
 	return append(answer, responseNoA...), nil
 }
 
@@ -89,19 +90,21 @@ func (s *stateful) readSubnet(req *dns.Msg) string {
 	return ""
 }
 
-func (s *stateful) refresh(q question, responseA map[string]dns.RR) (m map[question]state) {
-	m = make(map[question]state)
-	st, found := m[q]
-	if !found {
-		st = state {
-			ip:   []string{},
+func (s *stateful) refresh(k key, q question, responseA map[string]dns.RR) {
+	var st state
+	if _, found := s.state[k]; !found {
+		s.state[k] = make(map[question]state)
+	}
+	if _, found := s.state[k][q]; !found {
+		s.state[k][q] = state {
+			ip: []string{},
+			timestamp: time.Now(),
 		}
 	}
-	st.timestamp = time.Now()
+	st = s.state[k][q]
 	st.updateState(responseA)
 	st.ip = rotate(st.ip)
-	m[q] = st
-	return
+	s.state[k][q] = st
 }
 
 func (s *state) updateState(responseA map[string]dns.RR) {

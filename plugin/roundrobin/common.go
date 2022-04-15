@@ -36,3 +36,7 @@ func rotate(slice []string) (r []string){
 	}
 	return
 }
+
+//func rotate(slice []string) (r []string){
+//	return append(slice[(len(slice)):],slice[0:len(slice)]...)
+//}
