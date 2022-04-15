@@ -1,5 +1,5 @@
 example.com {
-    hosts  ~/etchosts
+    hosts  /Users/ab011th/etchosts
     log
     roundrobin subnet
 }
