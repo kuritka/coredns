@@ -89,12 +89,7 @@ func (s *stateless) updateState()  *stateless {
 
 // rotate performs a cyclic rotation of the IPs records
 func (s *stateless) rotate() *stateless {
-	var newIPs []string
-	l := len(s.IPs)
-	for i := range s.IPs {
-		newIPs = append(newIPs, s.IPs[(i+1) % l])
-	}
-	s.IPs = newIPs
+	s.IPs = rotate(s.IPs)
 	return s
 }
 
