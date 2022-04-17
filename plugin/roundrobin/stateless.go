@@ -45,20 +45,8 @@ func newStateless(request *dns.Msg, response *dns.Msg) (s *stateless) {
 			}
 		}
 	}
-
-	for _, a := range  response.Answer {
-		switch a.Header().Rrtype {
-		case dns.TypeA:
-			s.responseA[a.(*dns.A).A.String()] = a
-		case dns.TypeAAAA:
-			s.responseA[a.(*dns.AAAA).AAAA.String()] = a
-		default:
-			s.responseNoA = append(s.responseNoA, a)
-		}
-	}
-	for _, ip := range s.IPs {
-		s.requestA[ip] = true
-	}
+	s.responseA, s.responseNoA = parseAnswerSection(response.Answer)
+	s.requestA = ipsToSet(s.IPs)
 
 	return
 }

@@ -4,9 +4,9 @@ import "github.com/miekg/dns"
 
 // parseAnswerSection converts []dns.RR into map of A or AAAA records and slice containing all except A or AAAA
 // todo: reuse in random / stateless
-func parseAnswerSection(arr []dns.RR) (ip map[string]dns.RR,na []dns.RR) {
+func parseAnswerSection(arr []dns.RR) (ip map[string]dns.RR, noip []dns.RR) {
 	ip = make(map[string]dns.RR)
-	na = make([]dns.RR,0)
+	noip = make([]dns.RR,0)
 	for _, r := range arr {
 		switch r.Header().Rrtype {
 		case dns.TypeA:
@@ -14,7 +14,7 @@ func parseAnswerSection(arr []dns.RR) (ip map[string]dns.RR,na []dns.RR) {
 		case dns.TypeAAAA:
 			ip[r.(*dns.AAAA).AAAA.String()] = r
 		default:
-			na = append(na, r)
+			noip = append(noip, r)
 		}
 	}
 	return
