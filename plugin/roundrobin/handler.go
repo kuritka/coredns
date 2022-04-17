@@ -12,10 +12,10 @@ type RoundRobin struct {
 }
 
 const (
-	strategyWeight     = "weight"
-	strategyConsistent = "consistent"
-	strategyRandom     = "random"
-	strategySubnet     = "subnet"
+	strategyWeight    = "weight"
+	strategyStateless = "stateless"
+	strategyRandom    = "random"
+	strategyStateful = "stateful"
 )
 
 func New(next  plugin.Handler, strategy shuffler) *RoundRobin{

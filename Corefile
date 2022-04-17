@@ -1,10 +1,10 @@
 example.com {
     hosts etchosts
     log
-    roundrobin consistent
+    roundrobin stateless
 }
 myhost.com {
     hosts etchosts
     log
-    roundrobin subnet
+    roundrobin stateful
 }

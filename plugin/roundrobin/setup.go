@@ -34,13 +34,13 @@ func parse(c *caddy.Controller) (shuffler,  error) {
 			return NewConsistent(), nil
 		}
 		switch args[0] {
-		case strategyConsistent:
+		case strategyStateless:
 			return NewConsistent(), nil
 		case strategyWeight:
 			return nil, fmt.Errorf("not implemented %s", args[0])
 		case strategyRandom:
 			return NewRandom(), nil
-		case strategySubnet:
+		case strategyStateful:
 			return NewSubnet(), nil
 		}
 	}

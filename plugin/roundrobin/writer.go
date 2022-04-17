@@ -44,4 +44,3 @@ func (r *MessageWriter) Write(buf []byte) (int, error) {
 	n, err := r.ResponseWriter.Write(buf)
 	return n, err
 }
-

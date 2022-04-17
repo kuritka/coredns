@@ -15,7 +15,7 @@ func NewRandom() *Random {
 	return &Random{}
 }
 
-func (r *Random) Shuffle(req request.Request, msg *dns.Msg) []dns.RR{
+func (r *Random) Shuffle(_ request.Request, msg *dns.Msg) []dns.RR{
 	var shuffled []dns.RR
 	var skipped []dns.RR
 	for _, a := range  msg.Answer {
