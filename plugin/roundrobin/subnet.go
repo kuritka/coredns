@@ -5,17 +5,17 @@ import (
 	"github.com/miekg/dns"
 )
 
-type Subnet struct {
+type Stateful struct {
 	 state *stateful
 }
 
-func NewSubnet() *Subnet {
-	return &Subnet{
+func NewStateful() *Stateful {
+	return &Stateful{
 		state: newStateful(),
 	}
 }
 
-func (s *Subnet) Shuffle(req request.Request, res *dns.Msg) (rr []dns.RR) {
+func (s *Stateful) Shuffle(req request.Request, res *dns.Msg) (rr []dns.RR) {
 	rr, _ = s.state.handle(&req, res)
 	return
 }

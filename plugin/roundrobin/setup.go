@@ -31,17 +31,17 @@ func parse(c *caddy.Controller) (shuffler,  error) {
 	for c.Next() {
 		args := c.RemainingArgs()
 		if len(args) == 0 {
-			return NewConsistent(), nil
+			return NewStateful(), nil
 		}
 		switch args[0] {
 		case strategyStateless:
-			return NewConsistent(), nil
+			return NewStateless(), nil
 		case strategyWeight:
 			return nil, fmt.Errorf("not implemented %s", args[0])
 		case strategyRandom:
 			return NewRandom(), nil
 		case strategyStateful:
-			return NewSubnet(), nil
+			return NewStateful(), nil
 		}
 	}
 	return nil, fmt.Errorf("unknown roundrobin type")

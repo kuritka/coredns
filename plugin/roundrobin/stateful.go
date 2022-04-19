@@ -24,11 +24,6 @@ type state struct {
 	ip        []string
 }
 
-type inner struct {
-	ip map[string]bool
-	reqip map[string]bool
-}
-
 type stateful struct {
 	state map[key]map[question]state
 }

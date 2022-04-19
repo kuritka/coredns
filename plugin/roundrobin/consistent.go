@@ -5,13 +5,13 @@ import (
 	"github.com/miekg/dns"
 )
 
-type Consistent struct {
+type Stateless struct {
 }
 
-func NewConsistent() *Consistent {
-	return &Consistent{}
+func NewStateless() *Stateless {
+	return &Stateless{}
 }
 
-func (r *Consistent) Shuffle(req request.Request, msg *dns.Msg) []dns.RR{
+func (r *Stateless) Shuffle(req request.Request, msg *dns.Msg) []dns.RR{
 	return newStateless(req.Req, msg).updateState().rotate().getAnswers()
 }
