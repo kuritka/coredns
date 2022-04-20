@@ -7,6 +7,8 @@ import (
 	"github.com/coredns/coredns/plugin/test"
 )
 
+const maxAttemptsToReachVariation = 100
+
 var (
 	avariations =[]string{"[10.240.0.1 10.240.0.2 10.240.0.3]","[10.240.0.1 10.240.0.3 10.240.0.2]",
 	"[10.240.0.3 10.240.0.2 10.240.0.1]","[10.240.0.3 10.240.0.1 10.240.0.2]",
@@ -27,13 +29,13 @@ func TestRoundRobinRandomAMixed(t *testing.T){
 
 	for _, v := range avariations {
 		var x int
-		for x = 0; x < 100; x++ {
+		for x = 0; x < maxAttemptsToReachVariation; x++ {
 			result := NewRandom().Shuffle(m.req, m.res)
 			if fmt.Sprintf("%v", getIPs(result)) == v {
 				break
 			}
 		}
-		if x == 100 {
+		if x == maxAttemptsToReachVariation {
 			t.Errorf("The Random shuffle is not working as expected. %v didn't occure during %v attempts", v, x)
 		}
 	}
@@ -47,13 +49,13 @@ func TestRoundRobinRandomAOnly(t *testing.T){
 
 	for _, v := range avariations {
 		var x int
-		for x = 0; x < 100; x++ {
+		for x = 0; x < maxAttemptsToReachVariation; x++ {
 			result := NewRandom().Shuffle(m.req, m.res)
 			if fmt.Sprintf("%v", getIPs(result)) == v {
 				break
 			}
 		}
-		if x == 100 {
+		if x == maxAttemptsToReachVariation {
 			t.Errorf("The Random shuffle is not working as expected. %v didn't occure during %v attempts", v, x)
 		}
 	}
@@ -67,13 +69,13 @@ func TestRoundRobinRandomAAAAOnly(t *testing.T){
 
 	for _, v := range aaaavariations {
 		var x int
-		for x = 0; x < 100; x++ {
+		for x = 0; x < maxAttemptsToReachVariation; x++ {
 			result := NewRandom().Shuffle(m.req, m.res)
 			if fmt.Sprintf("%v", getIPs(result)) == v {
 				break
 			}
 		}
-		if x == 100 {
+		if x == maxAttemptsToReachVariation {
 			t.Errorf("The Random shuffle is not working as expected. %v didn't occure during %v attempts", v, x)
 		}
 	}
