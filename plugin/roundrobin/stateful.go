@@ -53,7 +53,7 @@ func (s *stateful) updateState(req *request.Request, res *dns.Msg) (answer []dns
 	}
 	q := question(req.Req.Question[0].Name)
 	k := s.key(req)
-	responseA, responseNoA := parseAnswerSection(res.Answer)
+	responseA,_, responseNoA := parseAnswerSection(res.Answer)
 	s.refresh(k, q, responseA)
 	for _, ip := range s.state[k][q].ip {
 		answer = append(answer, responseA[ip])

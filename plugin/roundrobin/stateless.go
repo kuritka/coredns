@@ -9,24 +9,29 @@ import (
 type stateless struct {
 	IPs    []string `json:"ip"`
 	// IPs converted into map
-	requestA map[string]bool
+	requestIPs map[string]bool
 	// response.Answers[] converted into map which are A or AAAA. IP is a key
 	responseA map[string]dns.RR
+	// contains all response IPs which are A or AAAA
+	responseIPs []string
 	// contains all response records which are not A nor AAAA
 	responseNoA []dns.RR
 }
 
 func newStateless(request *dns.Msg, response *dns.Msg) (s *stateless) {
 	const identifierPrefix ="_rr_state="
+	var empty = func() *stateless{
+		return &stateless{
+			requestIPs:  map[string]bool{},
+			responseA:   map[string]dns.RR{},
+			responseIPs: []string{},
+			responseNoA: []dns.RR{},
+		}
+	}
 	if request == nil || response == nil {
 		return
 	}
-	s = &stateless{
-		requestA: map[string]bool{},
-		responseA: map[string]dns.RR{},
-		responseNoA: []dns.RR{},
-	}
-
+	s = empty()
 	// extracting records from client request
 	for _, e := range request.Extra {
 		opt := e.(*dns.OPT)
@@ -42,18 +47,21 @@ func newStateless(request *dns.Msg, response *dns.Msg) (s *stateless) {
 			if strings.HasPrefix(data, identifierPrefix){
 				str := strings.Replace(data, identifierPrefix,"",-1)
 				_ = json.Unmarshal([]byte(str),&s)
+				if s == nil {
+					s = empty()
+				}
 			}
 		}
 	}
-	s.responseA, s.responseNoA = parseAnswerSection(response.Answer)
-	s.requestA = ipsToSet(s.IPs)
+	s.responseA, s.responseIPs, s.responseNoA = parseAnswerSection(response.Answer)
+	s.requestIPs = ipsToSet(s.IPs)
 
 	return
 }
 
 // updateState compare stateless records with response message records
 // and cuts removed records or append new records to stateless
-// updateState keeps records in the same order as they ar defined in tghe IPs field.
+// updateState keeps records in the same order as they ar defined in the IPs field.
 func (s *stateless) updateState()  *stateless {
 	var newIPs []string
 
@@ -64,9 +72,9 @@ func (s *stateless) updateState()  *stateless {
 		}
 	}
 
-	// to the end of the IP list append new records which doesn't exist in request but exist in response.
-	for ip := range s.responseA {
-		if !s.requestA[ip] {
+	// to the end of the IP list append new records which doesn't exist in OPT but exist in response.
+	for _, ip := range s.responseIPs {
+		if !s.requestIPs[ip] {
 			newIPs = append(newIPs, ip)
 		}
 	}
