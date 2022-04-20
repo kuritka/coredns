@@ -17,7 +17,7 @@ var (
 	"[4001:a1:1014::8a 4001:a1:1014::89 4001:a1:1014::8b]","[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]"}
 )
 
-func TestRandomRoundRobinAMixed(t *testing.T){
+func TestRoundRobinRandomAMixed(t *testing.T){
 	m := newMid()
 	m.AddResponseAnswer(test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."))
 	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
@@ -40,7 +40,7 @@ func TestRandomRoundRobinAMixed(t *testing.T){
 }
 
 
-func TestRandomRoundRobinAOnly(t *testing.T){
+func TestRoundRobinRandomAOnly(t *testing.T){
 	m := newMid()
 	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
 	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"))
@@ -60,7 +60,7 @@ func TestRandomRoundRobinAOnly(t *testing.T){
 	}
 }
 
-func TestRandomRoundRobinAAAAOnly(t *testing.T){
+func TestRoundRobinRandomAAAAOnly(t *testing.T){
 	m := newMid()
 	m.AddResponseAnswer(test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::89"))
 	m.AddResponseAnswer(test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8a"))
@@ -80,7 +80,7 @@ func TestRandomRoundRobinAAAAOnly(t *testing.T){
 	}
 }
 
-func TestRandomRoundRobinEmptyAnswer(t *testing.T){
+func TestRoundRobinRandomEmptyAnswer(t *testing.T){
 	m := newMid()
 	result := NewRandom().Shuffle(m.req, m.res)
 	if len(result) != 0 {
@@ -88,11 +88,18 @@ func TestRandomRoundRobinEmptyAnswer(t *testing.T){
 	}
 }
 
-func TestRandomRoundRobinOneAnswer(t *testing.T){
+func TestRoundRobinRandomStableOrderForNonAandAAA(t *testing.T){
 	m := newMid()
+	m.AddResponseAnswer(test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."))
+	m.AddResponseAnswer(test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com."))
+	m.AddResponseAnswer(test.MX("alpha.cloud.example.com.			300	IN	MX		1	mx-beta.cloud.example.com."))
 	result := NewRandom().Shuffle(m.req, m.res)
-	if len(result) != 0 {
-		t.Errorf("Expecting empty result but got %v", result)
+	if len(result) != 3 {
+		t.Errorf("Expecting %v result but got %v", len(m.res.Answer), len(result))
+	}
+	for i, v := range result {
+		if v.String() != m.res.Answer[i].String() {
+			t.Errorf("Expecting %v result but got %v", v.String(), m.res.Answer[i].String())
+		}
 	}
 }
-
