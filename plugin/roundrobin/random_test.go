@@ -39,7 +39,6 @@ func TestRoundRobinRandomAMixed(t *testing.T){
 	}
 }
 
-
 func TestRoundRobinRandomAOnly(t *testing.T){
 	m := newMid()
 	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
@@ -88,6 +87,19 @@ func TestRoundRobinRandomEmptyAnswer(t *testing.T){
 	}
 }
 
+func TestRoundRobinRandomARecordsGoesFirst(t *testing.T){
+	m := newMid()
+	m.AddResponseAnswer(test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."))
+	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
+	result := NewRandom().Shuffle(m.req, m.res)
+	if result[0].String() != m.res.Answer[1].String() {
+		t.Errorf("Expecting %s result but got %s",result[0].String(), m.res.Answer[1].String())
+	}
+	if result[1].String() != m.res.Answer[0].String() {
+		t.Errorf("Expecting %s result but got %s",result[1].String(), m.res.Answer[0].String())
+	}
+}
+
 func TestRoundRobinRandomStableOrderForNonAandAAA(t *testing.T){
 	m := newMid()
 	m.AddResponseAnswer(test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."))
@@ -99,7 +111,7 @@ func TestRoundRobinRandomStableOrderForNonAandAAA(t *testing.T){
 	}
 	for i, v := range result {
 		if v.String() != m.res.Answer[i].String() {
-			t.Errorf("Expecting %v result but got %v", v.String(), m.res.Answer[i].String())
+			t.Errorf("Expecting %s result but got %s", v.String(), m.res.Answer[i].String())
 		}
 	}
 }
