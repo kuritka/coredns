@@ -3,13 +3,10 @@ package roundrobin
 // common_test.go contains helper for round_robin tests
 
 import (
-	"context"
 	"encoding/json"
-	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/request"
 	"github.com/miekg/dns"
 )
-
 
 type mid struct {
 	req request.Request
@@ -37,8 +34,12 @@ func (p mid) AddRequestAnswer(rr dns.RR){
 	p.req.Req.Answer = append(p.req.Req.Answer, rr)
 }
 
+// adds raw value from slice of dns.RR
 func (p mid) AddRequestOpt(rr ...dns.RR){
-	json, _ := json.Marshal(rr)
+	type state struct {
+		IPs    []string `json:"ip"`
+	}
+	json, _ := json.Marshal(state{IPs: getIPs(rr)})
 	opt := new(dns.OPT)
 	opt.Hdr.Name = "."
 	opt.Hdr.Rrtype = dns.TypeOPT
@@ -46,20 +47,20 @@ func (p mid) AddRequestOpt(rr ...dns.RR){
 	e.Code = dns.EDNS0LOCALSTART
 	e.Data = append([]byte("_rr_state="),json...)
 	opt.Option = append(opt.Option, e)
-	p.req.Req.Extra = append(rr, opt)
+	p.req.Req.Extra = append(p.req.Req.Extra, opt)
 }
 
+// adds raw value to OPT of the DNS query
 func (p mid) AddRequestOptRaw(data string){
 	opt := new(dns.OPT)
 	opt.Hdr.Name = "."
 	opt.Hdr.Rrtype = dns.TypeOPT
 	e := new(dns.EDNS0_LOCAL)
 	e.Code = dns.EDNS0LOCALSTART
-	e.Data = append([]byte("_rr_state="),data)
+	e.Data = []byte(data)
 	opt.Option = append(opt.Option, e)
-	p.req.Req.Extra = append(rr, opt)
+	p.req.Req.Extra = append(p.req.Req.Extra, opt)
 }
-
 
 func getIPs(arr []dns.RR) (ips []string){
 	ips = []string{}
@@ -74,9 +75,10 @@ func getIPs(arr []dns.RR) (ips []string){
 	return
 }
 
-func handler() plugin.Handler {
-	return plugin.HandlerFunc(func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
-		w.WriteMsg(r)
-		return dns.RcodeSuccess, nil
-	})
+var filterAandAAAA = func(answers []dns.RR) (rr []dns.RR) {
+	rrMap, ipSlice, _ := parseAnswerSection(answers)
+	for _, ip := range ipSlice {
+		rr = append(rr, rrMap[ip])
+	}
+	return
 }
