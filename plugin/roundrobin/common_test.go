@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/coredns/coredns/request"
 	"github.com/miekg/dns"
+	"net"
 )
 
 type mid struct {
@@ -25,6 +26,17 @@ func newMid() mid {
 func (p mid) SetQuestion(q string, t uint16) {
 	p.req.Req.SetQuestion(q,t)
 }
+
+func (p mid) SetSubnet(ip string) {
+	opt := new(dns.OPT)
+	opt.Hdr.Name = "."
+	opt.Hdr.Rrtype = dns.TypeOPT
+	e := new(dns.EDNS0_SUBNET)
+	e.Address = net.ParseIP(ip)
+	opt.Option = append(opt.Option, e)
+	p.req.Req.Extra = append(p.req.Req.Extra, opt)
+}
+
 
 func (p mid) AddResponseAnswer(rr dns.RR){
 	p.res.Answer = append(p.res.Answer, rr)

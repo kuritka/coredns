@@ -48,10 +48,6 @@ func (s *stateful) handle(req *request.Request, res *dns.Msg) (rr []dns.RR, err 
 }
 
 func (s *stateful) updateState(req *request.Request, res *dns.Msg) (answer []dns.RR, err error){
-	if len(req.Req.Question) == 0 {
-		err = fmt.Errorf("empty question field")
-		return
-	}
 	q := question(req.Req.Question[0].Name)
 	k := s.key(req)
 	responseA, responseIPs, responseNoA := parseAnswerSection(res.Answer)

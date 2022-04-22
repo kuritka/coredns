@@ -102,10 +102,54 @@ func TestRoundRobinStatefulNoQuestion(t *testing.T){
 	}
 }
 
-func TestRoundRobinStatefulMultipleSubnetsAndDomains(t *testing.T){
-	m := newMid()
+func TestRoundRobinStatefulSubnetDomainsMixin(t *testing.T){
+	s := NewStateful()
+	tests := []struct {
+		question string
+		from	string
+		rr []dns.RR
+	}{
+		{"alpha.cloud.example.com.", "200.10.0.0",
+		[]dns.RR{
+			test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+			test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2")}},
+		{"alpha.cloud.example.com.", "101.203.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2")}},
+		{"beta.cloud.example.com.", "101.203.0.0",
+			[]dns.RR{
+				test.A("beta.cloud.example.com.		300	IN	A			20.100.0.1")}},
+		{"beta.cloud.example.com.", "102.203.0.0",
+			[]dns.RR{
+				test.A("beta.cloud.example.com.		300	IN	A			20.100.0.1")}},
+		{"gamma.cloud.example.com.", "4001:a1:1014::8a",
+			[]dns.RR{
+				test.A("gamma.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("gamma.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("gamma.cloud.example.com.		300	IN	A			10.240.0.3")}},
+	}
 
-	if len(NewStateful().Shuffle(m.req, m.res)) != 0 {
-		t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
+	for _, test := range tests {
+		m := newMid()
+		m.SetQuestion(test.question, dns.TypeA)
+		m.SetSubnet(test.from)
+		for _,a := range test.rr {
+			m.AddResponseAnswer(a)
+		}
+		_ = s.Shuffle(m.req, m.res)
+	}
+
+	for _, test := range tests {
+		ipMap := ipsToSet(getIPs(test.rr))
+		if len(s.state.state[key(test.from)][question(test.question)].ip) != len(test.rr) {
+			t.Errorf("the number of records in the test (%v) and the state (%v) do not match.",
+				len(test.rr), len(s.state.state[key(test.from)][question(test.question)].ip))
+		}
+		for _, ip := range s.state.state[key(test.from)][question(test.question)].ip {
+			if !ipMap[ip] {
+				t.Errorf("Can't find %s for state[%s][%s] ",ip,test.from, test.question)
+			}
+		}
 	}
 }
