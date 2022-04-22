@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	//TODO: garbage collection
 	// defaultTTLSeconds defines when state object is garbage collected
 	defaultTTLSeconds = 600
 	// garbageCollectionPeriodSeconds defines the period when garbage collection is triggered
@@ -53,18 +54,17 @@ func (s *stateful) updateState(req *request.Request, res *dns.Msg) (answer []dns
 	}
 	q := question(req.Req.Question[0].Name)
 	k := s.key(req)
-	responseA,_, responseNoA := parseAnswerSection(res.Answer)
-	s.refresh(k, q, responseA)
+	responseA, responseIPs, responseNoA := parseAnswerSection(res.Answer)
+	s.refresh(k, q, responseA, responseIPs)
 	for _, ip := range s.state[k][q].ip {
 		answer = append(answer, responseA[ip])
 	}
-	fmt.Println(s.state)
 	return append(answer, responseNoA...), nil
 }
 
 func (s *stateful) key(req *request.Request) key {
 	subnet := s.readSubnet(req.Req)
-	return key(fmt.Sprintf("%s_%s", req.IP(), subnet))
+	return key(fmt.Sprintf("%s", subnet))
 }
 
 // readSubnet reads the option EDNS0_SUBNET which is usually filled by resolvers.
@@ -85,7 +85,7 @@ func (s *stateful) readSubnet(req *dns.Msg) string {
 	return ""
 }
 
-func (s *stateful) refresh(k key, q question, responseA map[string]dns.RR) {
+func (s *stateful) refresh(k key, q question, responseA map[string]dns.RR, responseIPs []string) {
 	var st state
 	if _, found := s.state[k]; !found {
 		s.state[k] = make(map[question]state)
@@ -97,12 +97,12 @@ func (s *stateful) refresh(k key, q question, responseA map[string]dns.RR) {
 		}
 	}
 	st = s.state[k][q]
-	st.updateState(responseA)
+	st.updateState(responseA, responseIPs)
 	st.ip = rotate(st.ip)
 	s.state[k][q] = st
 }
 
-func (s *state) updateState(responseA map[string]dns.RR) {
+func (s *state) updateState(responseA map[string]dns.RR, responseIPs []string) {
 	var newIPs []string
 	currentA := ipsToSet(s.ip)
 
@@ -114,7 +114,7 @@ func (s *state) updateState(responseA map[string]dns.RR) {
 	}
 
 	// to the end of the IP list append new records which doesn't exist in request but exist in response.
-	for ip := range responseA {
+	for _, ip := range responseIPs {
 		if !currentA[ip] {
 			newIPs = append(newIPs, ip)
 		}

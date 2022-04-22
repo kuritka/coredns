@@ -22,6 +22,10 @@ func newMid() mid {
 	}
 }
 
+func (p mid) SetQuestion(q string, t uint16) {
+	p.req.Req.SetQuestion(q,t)
+}
+
 func (p mid) AddResponseAnswer(rr dns.RR){
 	p.res.Answer = append(p.res.Answer, rr)
 }
