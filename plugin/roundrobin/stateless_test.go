@@ -8,14 +8,6 @@ import (
 	"github.com/miekg/dns"
 )
 
-var (
-	arotations =[]string{"[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]","[10.240.0.3 10.240.0.4 10.240.0.1 10.240.0.2]",
-		"[10.240.0.4 10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.2 10.240.0.3 10.240.0.4]"}
-
-	aaaarotations =[]string{"[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]","[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
-		"[4001:a1:1014::89 4001:a1:1014::8a 4001:a1:1014::8b]"}
-)
-
 // In stateless, the client sends back previous state to the CoreDNS per DNS query,
 // the server doesn't know anything about client's data.
 // This test examines the response, different situations when we send different
@@ -72,6 +64,8 @@ func TestRoundRobinStatelessInitialize(t *testing.T) {
 }
 
 func TestRoundRobinStatelessShuffleA(t *testing.T) {
+	var arotations =[]string{"[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]","[10.240.0.3 10.240.0.4 10.240.0.1 10.240.0.2]",
+		"[10.240.0.4 10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.2 10.240.0.3 10.240.0.4]"}
 	var rr  []dns.RR
 	for i := 0; i < 10; i++ {
 		m := newMid()
@@ -93,6 +87,8 @@ func TestRoundRobinStatelessShuffleA(t *testing.T) {
 }
 
 func TestRoundRobinStatelessShuffleAAAA(t *testing.T) {
+	var aaaarotations =[]string{"[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]","[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
+		"[4001:a1:1014::89 4001:a1:1014::8a 4001:a1:1014::8b]"}
 	var rr  []dns.RR
 	var cname = test.CNAME("ipv6.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com.")
 
@@ -133,5 +129,29 @@ func TestRoundRobinStatelessShuffleEmpty(t *testing.T) {
 	m = newMid()
 	if len(NewStateless().Shuffle(m.req, m.res)) != 0 {
 		t.Errorf("The stateless retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
+	}
+}
+
+func TestRoundRobinStatelessShuffleOne(t *testing.T) {
+	a := test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1")
+	m := newMid()
+	m.AddRequestOptRaw(`_rr_state={"ip":[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]}`)
+	m.AddResponseAnswer(a)
+	var answers = NewStateless().Shuffle(m.req, m.res)
+	if len(answers) != 1 {
+		t.Errorf("The stateless retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
+	}
+	if answers[0].String() != a.String() {
+		t.Errorf("The stateless shuffle doesnt work.  Expected %s got %s",answers[0],a)
+	}
+
+	m = newMid()
+	m.AddResponseAnswer(a)
+	answers = NewStateless().Shuffle(m.req, m.res)
+	if len(answers) != 1 {
+		t.Errorf("The stateless retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
+	}
+	if answers[0].String() != a.String() {
+		t.Errorf("The stateless shuffle doesnt work.  Expected %s got %s",answers[0],a)
 	}
 }

@@ -3,7 +3,6 @@ package roundrobin
 import "github.com/miekg/dns"
 
 // parseAnswerSection converts []dns.RR into map of A or AAAA records and slice containing all except A or AAAA
-// todo: reuse in random / stateless
 func parseAnswerSection(arr []dns.RR) (ipmap map[string]dns.RR, ip []string, noip []dns.RR) {
 	ipmap = make(map[string]dns.RR)
 	ip = make([]string,0)
@@ -34,14 +33,10 @@ func ipsToSet(ips []string) (m map[string]bool) {
 	return
 }
 
+// rotate items from one slice to another
 func rotate(slice []string) (r []string){
-	l := len(slice)
 	for i := range slice {
-		r = append(r, slice[(i+1) % l])
+		r = append(r, slice[(i+1) % len(slice)])
 	}
 	return
 }
-
-//func rotate(slice []string) (r []string){
-//	return append(slice[(len(slice)):],slice[0:len(slice)]...)
-//}
