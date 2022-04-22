@@ -11,15 +11,17 @@ import (
 func TestRoundRobinStatefulShuffleA(t *testing.T) {
 	var arotations =[]string{"[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]","[10.240.0.3 10.240.0.4 10.240.0.1 10.240.0.2]",
 		"[10.240.0.4 10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.2 10.240.0.3 10.240.0.4]"}
+	cname := test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com.")
+	mx := test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com.")
 	var s = NewStateful()
 	for i := 0; i < 10; i++ {
-		cname := test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com.")
 		m := newMid()
 		m.SetQuestion("alpha.cloud.example.com.", dns.TypeA)
 		m.AddResponseAnswer(cname)
 		m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
 		m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"))
 		m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"))
+		m.AddResponseAnswer(mx)
 		m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.4"))
 
 		clientState := s.Shuffle(m.req, m.res)
@@ -30,6 +32,14 @@ func TestRoundRobinStatefulShuffleA(t *testing.T) {
 
 		if len(clientState) != len(m.res.Answer) {
 			t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(m.res.Answer), len(clientState))
+		}
+
+		if clientState[len(clientState)-1] != mx {
+			t.Errorf("Expecting %s result but got %s", mx, clientState[len(clientState)-1].String())
+		}
+
+		if clientState[len(clientState)-2] != cname {
+			t.Errorf("Expecting %s result but got %s", cname, clientState[len(clientState)-2].String())
 		}
 	}
 }
@@ -87,6 +97,14 @@ func TestRoundRobinStatefulShuffleOne(t *testing.T) {
 
 func TestRoundRobinStatefulNoQuestion(t *testing.T){
 	m := newMid()
+	if len(NewStateful().Shuffle(m.req, m.res)) != 0 {
+		t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
+	}
+}
+
+func TestRoundRobinStatefulMultipleSubnetsAndDomains(t *testing.T){
+	m := newMid()
+
 	if len(NewStateful().Shuffle(m.req, m.res)) != 0 {
 		t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
 	}
