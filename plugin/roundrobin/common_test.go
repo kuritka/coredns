@@ -1,7 +1,5 @@
 package roundrobin
 
-// common_test.go contains helper for round_robin tests
-
 import (
 	"encoding/json"
 	"github.com/coredns/coredns/request"

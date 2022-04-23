@@ -128,6 +128,10 @@ func TestRoundRobinStatefulSubnetDomainsMixin(t *testing.T){
 				test.A("gamma.cloud.example.com.		300	IN	A			10.240.0.1"),
 				test.A("gamma.cloud.example.com.		300	IN	A			10.240.0.2"),
 				test.A("gamma.cloud.example.com.		300	IN	A			10.240.0.3")}},
+		{"empty.cloud.example.com", "200.10.0.0", []dns.RR{}},
+		{"cname.cloud.example.com", "200.10.0.0", []dns.RR{
+			test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."),
+		}},
 	}
 
 	for _, test := range tests {
@@ -142,7 +146,7 @@ func TestRoundRobinStatefulSubnetDomainsMixin(t *testing.T){
 
 	for _, test := range tests {
 		ipMap := ipsToSet(getIPs(test.rr))
-		if len(s.state.state[key(test.from)][question(test.question)].ip) != len(test.rr) {
+		if len(s.state.state[key(test.from)][question(test.question)].ip) != len(getIPs(test.rr)) {
 			t.Errorf("the number of records in the test (%v) and the state (%v) do not match.",
 				len(test.rr), len(s.state.state[key(test.from)][question(test.question)].ip))
 		}
