@@ -6,7 +6,7 @@ import (
 )
 
 type Stateful struct {
-	 state *stateful
+	state *stateful
 }
 
 func NewStateful() *Stateful {

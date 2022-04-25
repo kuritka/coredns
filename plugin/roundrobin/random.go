@@ -15,10 +15,10 @@ func NewRandom() *Random {
 	return &Random{}
 }
 
-func (r *Random) Shuffle(_ request.Request, msg *dns.Msg) []dns.RR{
+func (r *Random) Shuffle(_ request.Request, msg *dns.Msg) []dns.RR {
 	var shuffled []dns.RR
 	var skipped []dns.RR
-	for _, a := range  msg.Answer {
+	for _, a := range msg.Answer {
 		switch a.Header().Rrtype {
 		case dns.TypeA, dns.TypeAAAA:
 			shuffled = append(shuffled, a)
@@ -28,5 +28,5 @@ func (r *Random) Shuffle(_ request.Request, msg *dns.Msg) []dns.RR{
 	}
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(shuffled), func(i, j int) { shuffled[i], shuffled[j] = shuffled[j], shuffled[i] })
-	return append(shuffled,skipped...)
+	return append(shuffled, skipped...)
 }

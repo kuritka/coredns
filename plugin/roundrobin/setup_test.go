@@ -42,7 +42,7 @@ func TestSetup(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	var getType = func(v shuffler) string {
-		if v == nil{
+		if v == nil {
 			return ""
 		}
 		t := reflect.TypeOf(v)
@@ -88,4 +88,3 @@ func TestParse(t *testing.T) {
 		}
 	}
 }
-

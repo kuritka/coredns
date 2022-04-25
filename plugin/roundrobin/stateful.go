@@ -13,8 +13,8 @@ const (
 	defaultTTLSeconds = 600
 	// garbageCollectionPeriodSeconds defines the period when garbage collection is triggered
 	garbageCollectionPeriodSeconds = 1200
-	missingSubnet = "missing-subnet"
-	emptySubnet = "empty-subnet"
+	missingSubnet                  = "missing-subnet"
+	emptySubnet                    = "empty-subnet"
 )
 
 // <clientIP>_<clientSubnet>

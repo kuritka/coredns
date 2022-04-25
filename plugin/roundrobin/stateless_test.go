@@ -58,15 +58,15 @@ func TestRoundRobinStatelessInitialize(t *testing.T) {
 			t.Errorf("Expecting %s result but got %s", cname, clientState[4].String())
 		}
 		if clientState[5].String() != mx.String() {
-			t.Errorf("Expecting %s result but got %s",mx, clientState[5].String())
+			t.Errorf("Expecting %s result but got %s", mx, clientState[5].String())
 		}
 	}
 }
 
 func TestRoundRobinStatelessShuffleA(t *testing.T) {
-	var arotations =[]string{"[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]","[10.240.0.3 10.240.0.4 10.240.0.1 10.240.0.2]",
+	var arotations = []string{"[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]", "[10.240.0.3 10.240.0.4 10.240.0.1 10.240.0.2]",
 		"[10.240.0.4 10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.2 10.240.0.3 10.240.0.4]"}
-	var rr  []dns.RR
+	var rr []dns.RR
 	for i := 0; i < 10; i++ {
 		m := newMid()
 		m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
@@ -80,16 +80,16 @@ func TestRoundRobinStatelessShuffleA(t *testing.T) {
 		// save the new state for the next query
 		rr = filterAandAAAA(clientState)
 
-		if fmt.Sprintf("%v",getIPs(clientState)) != fmt.Sprintf("%v",arotations[i %len(arotations)]) {
-			t.Errorf("%v: The stateless rotation is not working. Expecting %v but got %v.",i, arotations[i %len(arotations)], getIPs(clientState))
+		if fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", arotations[i%len(arotations)]) {
+			t.Errorf("%v: The stateless rotation is not working. Expecting %v but got %v.", i, arotations[i%len(arotations)], getIPs(clientState))
 		}
 	}
 }
 
 func TestRoundRobinStatelessShuffleAAAA(t *testing.T) {
-	var aaaarotations =[]string{"[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]","[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
+	var aaaarotations = []string{"[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]", "[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
 		"[4001:a1:1014::89 4001:a1:1014::8a 4001:a1:1014::8b]"}
-	var rr  []dns.RR
+	var rr []dns.RR
 	var cname = test.CNAME("ipv6.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com.")
 
 	for i := 0; i < 10; i++ {
@@ -105,8 +105,8 @@ func TestRoundRobinStatelessShuffleAAAA(t *testing.T) {
 		// save the new state for the next query
 		rr = filterAandAAAA(clientState)
 
-		if fmt.Sprintf("%v",getIPs(clientState)) != fmt.Sprintf("%v",aaaarotations[i %len(aaaarotations)]) {
-			t.Errorf("%v: The stateless rotation is not working. Expecting %v but got %v.",i, aaaarotations[i %len(aaaarotations)], getIPs(clientState))
+		if fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", aaaarotations[i%len(aaaarotations)]) {
+			t.Errorf("%v: The stateless rotation is not working. Expecting %v but got %v.", i, aaaarotations[i%len(aaaarotations)], getIPs(clientState))
 		}
 
 		if len(clientState) != len(m.res.Answer) {
@@ -142,7 +142,7 @@ func TestRoundRobinStatelessShuffleOne(t *testing.T) {
 		t.Errorf("The stateless retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
 	}
 	if answers[0].String() != a.String() {
-		t.Errorf("The stateless shuffle doesnt work.  Expected %s got %s",answers[0],a)
+		t.Errorf("The stateless shuffle doesnt work.  Expected %s got %s", answers[0], a)
 	}
 
 	m = newMid()
@@ -152,6 +152,6 @@ func TestRoundRobinStatelessShuffleOne(t *testing.T) {
 		t.Errorf("The stateless retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
 	}
 	if answers[0].String() != a.String() {
-		t.Errorf("The stateless shuffle doesnt work.  Expected %s got %s",answers[0],a)
+		t.Errorf("The stateless shuffle doesnt work.  Expected %s got %s", answers[0], a)
 	}
 }

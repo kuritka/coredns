@@ -22,7 +22,7 @@ func newMid() mid {
 }
 
 func (p mid) SetQuestion(q string, t uint16) {
-	p.req.Req.SetQuestion(q,t)
+	p.req.Req.SetQuestion(q, t)
 }
 
 func (p mid) SetSubnet(ip string) {
@@ -35,23 +35,22 @@ func (p mid) SetSubnet(ip string) {
 	p.req.Req.Extra = append(p.req.Req.Extra, opt)
 }
 
-
-func (p mid) AddResponseAnswer(rr dns.RR){
+func (p mid) AddResponseAnswer(rr dns.RR) {
 	p.res.Answer = append(p.res.Answer, rr)
 }
 
-func (p mid) AddResponseExtra(rr dns.RR){
+func (p mid) AddResponseExtra(rr dns.RR) {
 	p.res.Extra = append(p.res.Answer, rr)
 }
 
-func (p mid) AddRequestAnswer(rr dns.RR){
+func (p mid) AddRequestAnswer(rr dns.RR) {
 	p.req.Req.Answer = append(p.req.Req.Answer, rr)
 }
 
 // adds raw value from slice of dns.RR
-func (p mid) AddRequestOpt(rr ...dns.RR){
+func (p mid) AddRequestOpt(rr ...dns.RR) {
 	type state struct {
-		IPs    []string `json:"ip"`
+		IPs []string `json:"ip"`
 	}
 	json, _ := json.Marshal(state{IPs: getIPs(rr)})
 	opt := new(dns.OPT)
@@ -59,13 +58,13 @@ func (p mid) AddRequestOpt(rr ...dns.RR){
 	opt.Hdr.Rrtype = dns.TypeOPT
 	e := new(dns.EDNS0_LOCAL)
 	e.Code = dns.EDNS0LOCALSTART
-	e.Data = append([]byte("_rr_state="),json...)
+	e.Data = append([]byte("_rr_state="), json...)
 	opt.Option = append(opt.Option, e)
 	p.req.Req.Extra = append(p.req.Req.Extra, opt)
 }
 
 // adds raw value to OPT of the DNS query
-func (p mid) AddRequestOptRaw(data string){
+func (p mid) AddRequestOptRaw(data string) {
 	opt := new(dns.OPT)
 	opt.Hdr.Name = "."
 	opt.Hdr.Rrtype = dns.TypeOPT
@@ -76,7 +75,7 @@ func (p mid) AddRequestOptRaw(data string){
 	p.req.Req.Extra = append(p.req.Req.Extra, opt)
 }
 
-func getIPs(arr []dns.RR) (ips []string){
+func getIPs(arr []dns.RR) (ips []string) {
 	ips = []string{}
 	for _, rr := range arr {
 		switch rr.Header().Rrtype {

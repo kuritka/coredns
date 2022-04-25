@@ -27,7 +27,7 @@ func setup(c *caddy.Controller) error {
 	return nil
 }
 
-func parse(c *caddy.Controller) (shuffler,  error) {
+func parse(c *caddy.Controller) (shuffler, error) {
 	for c.Next() {
 		args := c.RemainingArgs()
 		if len(args) == 0 {

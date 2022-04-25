@@ -10,16 +10,16 @@ import (
 const maxAttemptsToReachVariation = 100
 
 var (
-	avariations =[]string{"[10.240.0.1 10.240.0.2 10.240.0.3]","[10.240.0.1 10.240.0.3 10.240.0.2]",
-	"[10.240.0.3 10.240.0.2 10.240.0.1]","[10.240.0.3 10.240.0.1 10.240.0.2]",
-	"[10.240.0.2 10.240.0.1 10.240.0.3]","[10.240.0.2 10.240.0.3 10.240.0.1]"}
+	avariations = []string{"[10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.3 10.240.0.2]",
+		"[10.240.0.3 10.240.0.2 10.240.0.1]", "[10.240.0.3 10.240.0.1 10.240.0.2]",
+		"[10.240.0.2 10.240.0.1 10.240.0.3]", "[10.240.0.2 10.240.0.3 10.240.0.1]"}
 
-	aaaavariations = []string{"[4001:a1:1014::89 4001:a1:1014::8a 4001:a1:1014::8b]","[4001:a1:1014::89 4001:a1:1014::8b 4001:a1:1014::8a]",
-	"[4001:a1:1014::8b 4001:a1:1014::8a 4001:a1:1014::89]","[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
-	"[4001:a1:1014::8a 4001:a1:1014::89 4001:a1:1014::8b]","[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]"}
+	aaaavariations = []string{"[4001:a1:1014::89 4001:a1:1014::8a 4001:a1:1014::8b]", "[4001:a1:1014::89 4001:a1:1014::8b 4001:a1:1014::8a]",
+		"[4001:a1:1014::8b 4001:a1:1014::8a 4001:a1:1014::89]", "[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
+		"[4001:a1:1014::8a 4001:a1:1014::89 4001:a1:1014::8b]", "[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]"}
 )
 
-func TestRoundRobinRandomAMixed(t *testing.T){
+func TestRoundRobinRandomAMixed(t *testing.T) {
 	m := newMid()
 	m.AddResponseAnswer(test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."))
 	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
@@ -41,7 +41,7 @@ func TestRoundRobinRandomAMixed(t *testing.T){
 	}
 }
 
-func TestRoundRobinRandomAOnly(t *testing.T){
+func TestRoundRobinRandomAOnly(t *testing.T) {
 	m := newMid()
 	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
 	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"))
@@ -61,7 +61,7 @@ func TestRoundRobinRandomAOnly(t *testing.T){
 	}
 }
 
-func TestRoundRobinRandomAAAAOnly(t *testing.T){
+func TestRoundRobinRandomAAAAOnly(t *testing.T) {
 	m := newMid()
 	m.AddResponseAnswer(test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::89"))
 	m.AddResponseAnswer(test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8a"))
@@ -81,7 +81,7 @@ func TestRoundRobinRandomAAAAOnly(t *testing.T){
 	}
 }
 
-func TestRoundRobinRandomEmptyAnswer(t *testing.T){
+func TestRoundRobinRandomEmptyAnswer(t *testing.T) {
 	m := newMid()
 	result := NewRandom().Shuffle(m.req, m.res)
 	if len(result) != 0 {
@@ -89,20 +89,20 @@ func TestRoundRobinRandomEmptyAnswer(t *testing.T){
 	}
 }
 
-func TestRoundRobinRandomARecordsGoesFirst(t *testing.T){
+func TestRoundRobinRandomARecordsGoesFirst(t *testing.T) {
 	m := newMid()
 	m.AddResponseAnswer(test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."))
 	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
 	result := NewRandom().Shuffle(m.req, m.res)
 	if result[0].String() != m.res.Answer[1].String() {
-		t.Errorf("Expecting %s result but got %s",result[0].String(), m.res.Answer[1].String())
+		t.Errorf("Expecting %s result but got %s", result[0].String(), m.res.Answer[1].String())
 	}
 	if result[1].String() != m.res.Answer[0].String() {
-		t.Errorf("Expecting %s result but got %s",result[1].String(), m.res.Answer[0].String())
+		t.Errorf("Expecting %s result but got %s", result[1].String(), m.res.Answer[0].String())
 	}
 }
 
-func TestRoundRobinRandomStableOrderForNonAandAAA(t *testing.T){
+func TestRoundRobinRandomStableOrderForNonAandAAA(t *testing.T) {
 	m := newMid()
 	m.AddResponseAnswer(test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."))
 	m.AddResponseAnswer(test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com."))

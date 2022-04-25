@@ -8,16 +8,14 @@ import (
 type MessageWriter struct {
 	dns.ResponseWriter
 	strategy shuffler
-	state request.Request
+	state    request.Request
 }
-
-
 
 func NewMessageWriter(w dns.ResponseWriter, msg *dns.Msg, strategy shuffler) (*MessageWriter, error) {
 	return &MessageWriter{
-		state: request.Request{W: w, Req: msg},
+		state:          request.Request{W: w, Req: msg},
 		ResponseWriter: w,
-		strategy: strategy,
+		strategy:       strategy,
 	}, nil
 }
 

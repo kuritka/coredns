@@ -15,12 +15,12 @@ const (
 	strategyWeight    = "weight"
 	strategyStateless = "stateless"
 	strategyRandom    = "random"
-	strategyStateful = "stateful"
+	strategyStateful  = "stateful"
 )
 
-func New(next  plugin.Handler, strategy shuffler) *RoundRobin{
+func New(next plugin.Handler, strategy shuffler) *RoundRobin {
 	return &RoundRobin{
-		Next: next,
+		Next:     next,
 		strategy: strategy,
 	}
 }
