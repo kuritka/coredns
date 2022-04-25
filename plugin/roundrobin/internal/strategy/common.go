@@ -1,4 +1,4 @@
-package roundrobin
+package strategy
 
 import "github.com/miekg/dns"
 

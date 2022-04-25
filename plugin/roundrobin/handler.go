@@ -3,12 +3,13 @@ package roundrobin
 import (
 	"context"
 	"github.com/coredns/coredns/plugin"
+	"github.com/coredns/coredns/plugin/roundrobin/internal/strategy"
 	"github.com/miekg/dns"
 )
 
 type RoundRobin struct {
 	Next     plugin.Handler
-	strategy shuffler
+	strategy strategy.Shuffler
 }
 
 const (
@@ -18,7 +19,7 @@ const (
 	strategyStateful  = "stateful"
 )
 
-func New(next plugin.Handler, strategy shuffler) *RoundRobin {
+func New(next plugin.Handler, strategy strategy.Shuffler) *RoundRobin {
 	return &RoundRobin{
 		Next:     next,
 		strategy: strategy,

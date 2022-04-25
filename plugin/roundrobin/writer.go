@@ -1,17 +1,18 @@
 package roundrobin
 
 import (
+	"github.com/coredns/coredns/plugin/roundrobin/internal/strategy"
 	"github.com/coredns/coredns/request"
 	"github.com/miekg/dns"
 )
 
 type MessageWriter struct {
 	dns.ResponseWriter
-	strategy shuffler
+	strategy strategy.Shuffler
 	state    request.Request
 }
 
-func NewMessageWriter(w dns.ResponseWriter, msg *dns.Msg, strategy shuffler) (*MessageWriter, error) {
+func NewMessageWriter(w dns.ResponseWriter, msg *dns.Msg, strategy strategy.Shuffler) (*MessageWriter, error) {
 	return &MessageWriter{
 		state:          request.Request{W: w, Req: msg},
 		ResponseWriter: w,

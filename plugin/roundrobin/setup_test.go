@@ -2,6 +2,7 @@ package roundrobin
 
 import (
 	"github.com/coredns/caddy"
+	"github.com/coredns/coredns/plugin/roundrobin/internal/strategy"
 	"reflect"
 	"strings"
 	"testing"
@@ -43,7 +44,7 @@ func TestSetup(t *testing.T) {
 }
 
 func TestParseArguments(t *testing.T) {
-	var getType = func(v shuffler) string {
+	var getType = func(v strategy.Shuffler) string {
 		if v == nil {
 			return ""
 		}

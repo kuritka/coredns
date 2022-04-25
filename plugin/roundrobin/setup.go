@@ -6,6 +6,7 @@ import (
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
 	clog "github.com/coredns/coredns/plugin/pkg/log"
+	"github.com/coredns/coredns/plugin/roundrobin/internal/strategy"
 )
 
 const (
@@ -27,21 +28,21 @@ func setup(c *caddy.Controller) error {
 	return nil
 }
 
-func parse(c *caddy.Controller) (shuffler, error) {
+func parse(c *caddy.Controller) (strategy.Shuffler, error) {
 	for c.Next() {
 		args := c.RemainingArgs()
 		if len(args) == 0 {
-			return NewStateful(), nil
+			return strategy.NewStateful(), nil
 		}
 		switch args[0] {
 		case strategyStateless:
-			return NewStateless(), nil
+			return strategy.NewStateless(), nil
 		case strategyWeight:
 			return nil, fmt.Errorf("not implemented %s", args[0])
 		case strategyRandom:
-			return NewRandom(), nil
+			return strategy.NewRandom(), nil
 		case strategyStateful:
-			return NewStateful(), nil
+			return strategy.NewStateful(), nil
 		}
 	}
 	return nil, fmt.Errorf("unknown roundrobin type")
