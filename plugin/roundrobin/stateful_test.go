@@ -206,3 +206,106 @@ func TestRoundRobinStatefulState(t *testing.T) {
 		})
 	}
 }
+
+
+func TestRoundRobinStatefulDNSRecordsChang(t *testing.T) {
+	tests := []struct {
+		name	string
+		question    string
+		from        string
+		rr          []dns.RR
+		expectedResult []string
+	}{
+		{"Create records for alpha.cloud.example.com.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
+			},
+			[]string{"10.240.0.2","10.240.0.3","10.240.0.1"},
+		},
+		{"Alter record for alpha.cloud.example.com.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.4"),
+			},
+			[]string{"10.240.0.3","10.240.0.1","10.240.0.4","10.240.0.2"},
+		},
+		{"Remove records for alpha.cloud.example.com.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.4"),
+			},
+			[]string{"10.240.0.4","10.240.0.1"},
+		},
+		{"Add non A records for alpha.cloud.example.com.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.4"),
+				test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."),
+				test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com."),
+			},
+			[]string{"10.240.0.1","10.240.0.4"},
+		},
+		{"Remove non A records for alpha.cloud.example.com.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.4"),
+			},
+			[]string{"10.240.0.4","10.240.0.1"},
+		},
+		{"Exchange records for alpha.cloud.example.com.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			100.0.0.100"),
+				test.A("alpha.cloud.example.com.		300	IN	A			100.0.0.200"),
+			},
+			[]string{"100.0.0.200","100.0.0.100"},
+		},
+		{"No change.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			100.0.0.100"),
+				test.A("alpha.cloud.example.com.		300	IN	A			100.0.0.200"),
+			},
+			[]string{"100.0.0.100","100.0.0.200"},
+		},
+		{"Remove records",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{},
+			[]string{},
+		},
+	}
+	s := NewStateful()
+	for _, test := range tests	 {
+		t.Run(test.name, func(t *testing.T) {
+			// arrange
+			m := newMid()
+			m.SetQuestion(test.question, dns.TypeA)
+			m.SetSubnet(test.from)
+			for _, a := range test.rr {
+				m.AddResponseAnswer(a)
+			}
+
+			//act
+			clientState := s.Shuffle(m.req, m.res)
+
+			// assert
+			if len(test.rr) != len(clientState) {
+				t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(test.rr), len(clientState))
+			}
+
+			if fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v",test.expectedResult) {
+				t.Errorf("The stateful rotation is not working. Expecting %v but got %v.", test.expectedResult, getIPs(clientState))
+			}
+
+		})
+	}
+}

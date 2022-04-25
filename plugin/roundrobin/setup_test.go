@@ -21,26 +21,28 @@ func TestSetup(t *testing.T) {
 		{"round_robin invalid", true, "unknown roundrobin type"},
 	}
 	for i, test := range tests {
-		c := caddy.NewTestController("dns", test.input)
-		err := setup(c)
+		t.Run(test.input, func(t *testing.T) {
+			c := caddy.NewTestController("dns", test.input)
+			err := setup(c)
 
-		if test.shouldErr && err == nil {
-			t.Errorf("Test %d: Expected error but found %s for input %s", i, err, test.input)
-		}
-
-		if err != nil {
-			if !test.shouldErr {
-				t.Errorf("Test %d: Expected no error but found one for input %s. Error was: %v", i, test.input, err)
+			if test.shouldErr && err == nil {
+				t.Errorf("Test %d: Expected error but found %s for input %s", i, err, test.input)
 			}
 
-			if !strings.Contains(err.Error(), test.expectedErrContent) {
-				t.Errorf("Test %d: Expected error to contain: %v, found error: %v, input: %s", i, test.expectedErrContent, err, test.input)
+			if err != nil {
+				if !test.shouldErr {
+					t.Errorf("Test %d: Expected no error but found one for input %s. Error was: %v", i, test.input, err)
+				}
+
+				if !strings.Contains(err.Error(), test.expectedErrContent) {
+					t.Errorf("Test %d: Expected error to contain: %v, found error: %v, input: %s", i, test.expectedErrContent, err, test.input)
+				}
 			}
-		}
+		})
 	}
 }
 
-func TestParse(t *testing.T) {
+func TestParseArguments(t *testing.T) {
 	var getType = func(v shuffler) string {
 		if v == nil {
 			return ""
@@ -66,25 +68,27 @@ func TestParse(t *testing.T) {
 		{"round_robin invalid", true, "", "unknown roundrobin type"},
 	}
 	for i, test := range tests {
-		c := caddy.NewTestController("dns", test.input)
-		strategy, err := parse(c)
+		t.Run(test.input, func(t *testing.T) {
+			c := caddy.NewTestController("dns", test.input)
+			strategy, err := parse(c)
 
-		if test.expectedStrategy != getType(strategy) {
-			t.Errorf("Test %d: Expected strategy %s but found %s for input %s", i, test.expectedStrategy, getType(strategy), test.input)
-		}
-
-		if test.shouldErr && err == nil {
-			t.Errorf("Test %d: Expected error but found %s for input %s", i, err, test.input)
-		}
-
-		if err != nil {
-			if !test.shouldErr {
-				t.Errorf("Test %d: Expected no error but found one for input %s. Error was: %v", i, test.input, err)
+			if test.expectedStrategy != getType(strategy) {
+				t.Errorf("Test %d: Expected strategy %s but found %s for input %s", i, test.expectedStrategy, getType(strategy), test.input)
 			}
 
-			if !strings.Contains(err.Error(), test.expectedErrContent) {
-				t.Errorf("Test %d: Expected error to contain: %v, found error: %v, input: %s", i, test.expectedErrContent, err, test.input)
+			if test.shouldErr && err == nil {
+				t.Errorf("Test %d: Expected error but found %s for input %s", i, err, test.input)
 			}
-		}
+
+			if err != nil {
+				if !test.shouldErr {
+					t.Errorf("Test %d: Expected no error but found one for input %s. Error was: %v", i, test.input, err)
+				}
+
+				if !strings.Contains(err.Error(), test.expectedErrContent) {
+					t.Errorf("Test %d: Expected error to contain: %v, found error: %v, input: %s", i, test.expectedErrContent, err, test.input)
+				}
+			}
+		})
 	}
 }
