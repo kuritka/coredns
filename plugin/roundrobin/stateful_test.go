@@ -8,90 +8,120 @@ import (
 	"github.com/miekg/dns"
 )
 
-func TestRoundRobinStatefulShuffleA(t *testing.T) {
-	var arotations = []string{"[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]", "[10.240.0.3 10.240.0.4 10.240.0.1 10.240.0.2]",
-		"[10.240.0.4 10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.2 10.240.0.3 10.240.0.4]"}
-	cname := test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com.")
-	mx := test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com.")
-	var s = NewStateful()
-	for i := 0; i < 10; i++ {
-		m := newMid()
-		m.SetQuestion("alpha.cloud.example.com.", dns.TypeA)
-		m.AddResponseAnswer(cname)
-		m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
-		m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"))
-		m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"))
-		m.AddResponseAnswer(mx)
-		m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.4"))
-
-		clientState := s.Shuffle(m.req, m.res)
-
-		if fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", arotations[i%len(arotations)]) {
-			t.Errorf("%v: The stateful rotation is not working. Expecting %v but got %v.", i, arotations[i%len(arotations)], getIPs(clientState))
-		}
-
-		if len(clientState) != len(m.res.Answer) {
-			t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(m.res.Answer), len(clientState))
-		}
-
-		if clientState[len(clientState)-1] != mx {
-			t.Errorf("Expecting %s result but got %s", mx, clientState[len(clientState)-1].String())
-		}
-
-		if clientState[len(clientState)-2] != cname {
-			t.Errorf("Expecting %s result but got %s", cname, clientState[len(clientState)-2].String())
-		}
+func TestRoundRobinStatefulShuffle(t *testing.T) {
+	tests := []struct {
+		name                         string
+		question                     string
+		dnsType                      uint16
+		expectedResults              []string
+		answer                       []dns.RR
+		expectedNonAPositionsMapping map[int]int
+	}{
+		{
+			name:     "IPv4 mixed answer",
+			question: "alpha.cloud.example.com.", dnsType: dns.TypeA,
+			expectedResults: []string{"[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]", "[10.240.0.3 10.240.0.4 10.240.0.1 10.240.0.2]",
+				"[10.240.0.4 10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.2 10.240.0.3 10.240.0.4]"},
+			answer: []dns.RR{
+				test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
+				test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com."),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.4"),
+			},
+			expectedNonAPositionsMapping: map[int]int{0: 4, 4: 5},
+		},
+		{
+			name:     "IPv4 only A records",
+			question: "alpha.cloud.example.com.", dnsType: dns.TypeA,
+			expectedResults: []string{"[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]", "[10.240.0.3 10.240.0.4 10.240.0.1 10.240.0.2]",
+				"[10.240.0.4 10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.2 10.240.0.3 10.240.0.4]"},
+			answer: []dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.4"),
+			},
+			expectedNonAPositionsMapping: map[int]int{},
+		},
+		{
+			name:     "IPv6 mixed answer",
+			question: "alpha.cloud.example.com.", dnsType: dns.TypeA,
+			expectedResults: []string{"[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]", "[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
+				"[4001:a1:1014::89 4001:a1:1014::8a 4001:a1:1014::8b]"},
+			answer: []dns.RR{
+				test.AAAA("alpha.cloud.example.com.		300	IN	AAAA			4001:a1:1014::89"),
+				test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."),
+				test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com."),
+				test.AAAA("alpha.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8a"),
+				test.AAAA("alpha.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8b"),
+			},
+			expectedNonAPositionsMapping: map[int]int{1: 3, 2: 4},
+		},
+		{
+			name:     "Empty answers",
+			question: "alpha.cloud.example.com.", dnsType: dns.TypeA,
+			expectedResults:              []string{},
+			answer:                       []dns.RR{},
+			expectedNonAPositionsMapping: map[int]int{},
+		},
+		{
+			name:     "Nil answers",
+			question: "alpha.cloud.example.com.", dnsType: dns.TypeA,
+			expectedResults:              []string{},
+			answer:                       []dns.RR{},
+			expectedNonAPositionsMapping: map[int]int{},
+		},
+		{
+			name:     "One A record",
+			question: "alpha.cloud.example.com.", dnsType: dns.TypeA,
+			expectedResults: []string{"[10.240.0.1]"},
+			answer: []dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+			},
+			expectedNonAPositionsMapping: map[int]int{},
+		},
+		{
+			name:     "One A record and several non A records",
+			question: "alpha.cloud.example.com.", dnsType: dns.TypeA,
+			expectedResults: []string{"[10.240.0.1]"},
+			answer: []dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com."),
+				test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."),
+			},
+			expectedNonAPositionsMapping: map[int]int{1: 1, 2: 2},
+		},
 	}
-}
 
-func TestRoundRobinStatefulShuffleAAAA(t *testing.T) {
-	var aaaarotations = []string{"[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]", "[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
-		"[4001:a1:1014::89 4001:a1:1014::8a 4001:a1:1014::8b]"}
-	var s = NewStateful()
-	for i := 0; i < 10; i++ {
-		cname := test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com.")
-		m := newMid()
-		m.SetQuestion("alpha.cloud.example.com.", dns.TypeAAAA)
-		m.AddResponseAnswer(test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::89"))
-		m.AddResponseAnswer(cname)
-		m.AddResponseAnswer(test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8a"))
-		m.AddResponseAnswer(test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8b"))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var s = NewStateful()
+			// requesting several times and check if rotation works
+			for i := 0; i < 10; i++ {
+				m := newMid()
+				m.SetQuestion(test.question, test.dnsType)
+				m.res.Answer = test.answer
+				clientState := s.Shuffle(m.req, m.res)
 
-		clientState := s.Shuffle(m.req, m.res)
+				if len(test.expectedResults) > 0 && fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", test.expectedResults[i%len(test.expectedResults)]) {
+					t.Errorf("%v: The stateful rotation is not working. Expecting %v but got %v.", i, test.expectedResults[i%len(test.expectedResults)], getIPs(clientState))
+				}
 
-		if fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", aaaarotations[i%len(aaaarotations)]) {
-			t.Errorf("%v: The stateful rotation is not working. Expecting %v but got %v.", i, aaaarotations[i%len(aaaarotations)], getIPs(clientState))
-		}
+				if len(clientState) != len(m.res.Answer) {
+					t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(m.res.Answer), len(clientState))
+				}
 
-		if len(clientState) != len(m.res.Answer) {
-			t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(m.res.Answer), len(clientState))
-		}
+				// If clientState contains non A, we check it exists on specified positions
+				for originalPosition, newPosition := range test.expectedNonAPositionsMapping {
+					if clientState[newPosition].String() != test.answer[originalPosition].String() {
+						t.Errorf("Expecting %s result but got %s", test.answer[originalPosition], clientState[newPosition])
+					}
+				}
+			}
+		})
 
-		if clientState[len(clientState)-1].String() != cname.String() {
-			t.Errorf("Expecting %s result but got %s", cname, clientState[len(clientState)-1].String())
-		}
-	}
-}
-
-func TestRoundRobinStatefulShuffleEmpty(t *testing.T) {
-	m := newMid()
-	m.SetQuestion("alpha.cloud.example.com.", dns.TypeA)
-	if len(NewStateful().Shuffle(m.req, m.res)) != 0 {
-		t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
-	}
-}
-
-func TestRoundRobinStatefulShuffleOne(t *testing.T) {
-	a := test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1")
-	m := newMid()
-	m.SetQuestion("alpha.cloud.example.com.", dns.TypeA)
-	m.AddResponseAnswer(a)
-	answers := NewStateful().Shuffle(m.req, m.res)
-	if len(answers) != 1 {
-		t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
-	}
-	if answers[0].String() != a.String() {
-		t.Errorf("The stateful shuffle doesnt work. Expected %s got %s", answers[0], a)
 	}
 }
 
