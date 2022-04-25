@@ -9,7 +9,7 @@ import (
 )
 
 func TestRoundRobinStatefulShuffleA(t *testing.T) {
-	var arotations =[]string{"[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]","[10.240.0.3 10.240.0.4 10.240.0.1 10.240.0.2]",
+	var arotations = []string{"[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]", "[10.240.0.3 10.240.0.4 10.240.0.1 10.240.0.2]",
 		"[10.240.0.4 10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.2 10.240.0.3 10.240.0.4]"}
 	cname := test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com.")
 	mx := test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com.")
@@ -26,8 +26,8 @@ func TestRoundRobinStatefulShuffleA(t *testing.T) {
 
 		clientState := s.Shuffle(m.req, m.res)
 
-		if fmt.Sprintf("%v",getIPs(clientState)) != fmt.Sprintf("%v",arotations[i %len(arotations)]) {
-			t.Errorf("%v: The stateful rotation is not working. Expecting %v but got %v.",i, arotations[i %len(arotations)], getIPs(clientState))
+		if fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", arotations[i%len(arotations)]) {
+			t.Errorf("%v: The stateful rotation is not working. Expecting %v but got %v.", i, arotations[i%len(arotations)], getIPs(clientState))
 		}
 
 		if len(clientState) != len(m.res.Answer) {
@@ -45,7 +45,7 @@ func TestRoundRobinStatefulShuffleA(t *testing.T) {
 }
 
 func TestRoundRobinStatefulShuffleAAAA(t *testing.T) {
-	var aaaarotations =[]string{"[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]","[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
+	var aaaarotations = []string{"[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]", "[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
 		"[4001:a1:1014::89 4001:a1:1014::8a 4001:a1:1014::8b]"}
 	var s = NewStateful()
 	for i := 0; i < 10; i++ {
@@ -59,8 +59,8 @@ func TestRoundRobinStatefulShuffleAAAA(t *testing.T) {
 
 		clientState := s.Shuffle(m.req, m.res)
 
-		if fmt.Sprintf("%v",getIPs(clientState)) != fmt.Sprintf("%v",aaaarotations[i %len(aaaarotations)]) {
-			t.Errorf("%v: The stateful rotation is not working. Expecting %v but got %v.",i, aaaarotations[i %len(aaaarotations)], getIPs(clientState))
+		if fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", aaaarotations[i%len(aaaarotations)]) {
+			t.Errorf("%v: The stateful rotation is not working. Expecting %v but got %v.", i, aaaarotations[i%len(aaaarotations)], getIPs(clientState))
 		}
 
 		if len(clientState) != len(m.res.Answer) {
@@ -91,69 +91,88 @@ func TestRoundRobinStatefulShuffleOne(t *testing.T) {
 		t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
 	}
 	if answers[0].String() != a.String() {
-		t.Errorf("The stateful shuffle doesnt work. Expected %s got %s",answers[0],a)
+		t.Errorf("The stateful shuffle doesnt work. Expected %s got %s", answers[0], a)
 	}
 }
 
-func TestRoundRobinStatefulNoQuestion(t *testing.T){
+func TestRoundRobinStatefulNoQuestion(t *testing.T) {
 	m := newMid()
 	if len(NewStateful().Shuffle(m.req, m.res)) != 0 {
 		t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
 	}
 }
 
-func TestRoundRobinStatefulSubnetDomainsMixin(t *testing.T){
+func TestRoundRobinStatefulState(t *testing.T) {
 	s := NewStateful()
 	tests := []struct {
-		question string
-		from	string
-		rr []dns.RR
+		question    string
+		from        string
+		expectedKey string
+		setSubnet   bool
+		rr          []dns.RR
 	}{
-		{"alpha.cloud.example.com.", "200.10.0.0",
-		[]dns.RR{
-			test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
-			test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2")}},
-		{"alpha.cloud.example.com.", "101.203.0.0",
+		{"alpha.cloud.example.com.", "200.10.0.0", "200.10.0.0", true,
 			[]dns.RR{
 				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
 				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2")}},
-		{"beta.cloud.example.com.", "101.203.0.0",
+		{"alpha.cloud.example.com.", "101.203.0.0", "101.203.0.0", true,
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2")}},
+		{"beta.cloud.example.com.", "101.203.0.0", "101.203.0.0", true,
 			[]dns.RR{
 				test.A("beta.cloud.example.com.		300	IN	A			20.100.0.1")}},
-		{"beta.cloud.example.com.", "102.203.0.0",
+		{"beta.cloud.example.com.", "102.203.0.0", "102.203.0.0", true,
 			[]dns.RR{
 				test.A("beta.cloud.example.com.		300	IN	A			20.100.0.1")}},
-		{"gamma.cloud.example.com.", "4001:a1:1014::8a",
+		{"ipv6-subnet.cloud.example.com.", "4001:a1:1014::8a", "4001:a1:1014::8a", true,
 			[]dns.RR{
-				test.A("gamma.cloud.example.com.		300	IN	A			10.240.0.1"),
-				test.A("gamma.cloud.example.com.		300	IN	A			10.240.0.2"),
-				test.A("gamma.cloud.example.com.		300	IN	A			10.240.0.3")}},
-		{"empty.cloud.example.com", "200.10.0.0", []dns.RR{}},
-		{"cname.cloud.example.com", "200.10.0.0", []dns.RR{
+				test.A("ipv6.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("ipv6.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("ipv6.cloud.example.com.		300	IN	A			10.240.0.3")}},
+		{"no-records.cloud.example.com.", "200.10.0.0", "200.10.0.0", true, []dns.RR{}},
+		{"empty-subnet-and-empty-response.cloud.com.", "", emptySubnet, true, []dns.RR{}},
+		{"empty-subnet-with-a-records.cloud.com.", "", emptySubnet, true, []dns.RR{
+			test.A("empty-subnet-with-a-records.cloud.com.		300	IN	A			10.240.0.1"),
+			test.A("empty-subnet-with-a-records.cloud.com.		300	IN	A			10.240.0.2"),
+		}},
+		{"missing-subnet-and-empty-response.cloud.com.", "", missingSubnet, false, []dns.RR{}},
+		{"missing-subnet-with-a-records.cloud.com.", "", missingSubnet, false, []dns.RR{
+			test.A("missing-subnet-with-a-records.cloud.com.		300	IN	A			10.240.0.1"),
+			test.A("missing-subnet-with-a-records.cloud.com.		300	IN	A			10.240.0.2"),
+		}},
+		{"only-cname.cloud.example.com.", "200.10.0.0", "200.10.0.0", true, []dns.RR{
 			test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."),
 		}},
 	}
 
 	for _, test := range tests {
-		m := newMid()
-		m.SetQuestion(test.question, dns.TypeA)
-		m.SetSubnet(test.from)
-		for _,a := range test.rr {
-			m.AddResponseAnswer(a)
-		}
-		_ = s.Shuffle(m.req, m.res)
-	}
+		t.Run(fmt.Sprintf("Request %s from %s", test.question, test.from), func(t *testing.T) {
 
-	for _, test := range tests {
-		ipMap := ipsToSet(getIPs(test.rr))
-		if len(s.state.state[key(test.from)][question(test.question)].ip) != len(getIPs(test.rr)) {
-			t.Errorf("the number of records in the test (%v) and the state (%v) do not match.",
-				len(test.rr), len(s.state.state[key(test.from)][question(test.question)].ip))
-		}
-		for _, ip := range s.state.state[key(test.from)][question(test.question)].ip {
-			if !ipMap[ip] {
-				t.Errorf("Can't find %s for state[%s][%s] ",ip,test.from, test.question)
+			// arrange
+			m := newMid()
+			m.SetQuestion(test.question, dns.TypeA)
+			if test.setSubnet {
+				m.SetSubnet(test.from)
 			}
-		}
+			for _, a := range test.rr {
+				m.AddResponseAnswer(a)
+			}
+
+			//act
+			_ = s.Shuffle(m.req, m.res)
+
+			// assert
+			ipMap := ipsToSet(getIPs(test.rr))
+			if len(s.state.state[key(test.expectedKey)][question(test.question)].ip) != len(getIPs(test.rr)) {
+				t.Errorf("the number of records in the test (%v) and the state (%v) do not match.",
+					len(test.rr), len(s.state.state[key(test.from)][question(test.question)].ip))
+			}
+			for _, ip := range s.state.state[key(test.expectedKey)][question(test.question)].ip {
+				if !ipMap[ip] {
+					t.Errorf("Can't find %s for state[%s][%s] ", ip, test.from, test.question)
+				}
+			}
+		})
 	}
 }

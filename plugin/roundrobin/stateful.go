@@ -13,10 +13,13 @@ const (
 	defaultTTLSeconds = 600
 	// garbageCollectionPeriodSeconds defines the period when garbage collection is triggered
 	garbageCollectionPeriodSeconds = 1200
+	missingSubnet = "missing-subnet"
+	emptySubnet = "empty-subnet"
 )
 
 // <clientIP>_<clientSubnet>
 type key string
+
 // one client could hit many domains
 type question string
 
@@ -47,7 +50,7 @@ func (s *stateful) handle(req *request.Request, res *dns.Msg) (rr []dns.RR, err 
 	return s.updateState(req, res)
 }
 
-func (s *stateful) updateState(req *request.Request, res *dns.Msg) (answer []dns.RR, err error){
+func (s *stateful) updateState(req *request.Request, res *dns.Msg) (answer []dns.RR, err error) {
 	q := question(req.Req.Question[0].Name)
 	k := s.key(req)
 	responseA, responseIPs, responseNoA := parseAnswerSection(res.Answer)
@@ -67,7 +70,7 @@ func (s *stateful) key(req *request.Request) key {
 func (s *stateful) readSubnet(req *dns.Msg) string {
 	for _, e := range req.Extra {
 		opt := e.(*dns.OPT)
-		if  opt == nil {
+		if opt == nil {
 			continue
 		}
 		for _, o := range opt.Option {
@@ -75,10 +78,13 @@ func (s *stateful) readSubnet(req *dns.Msg) string {
 			if x == nil {
 				continue
 			}
+			if o.(*dns.EDNS0_SUBNET).Address.String() == "<nil>" {
+				return emptySubnet
+			}
 			return o.(*dns.EDNS0_SUBNET).Address.String()
 		}
 	}
-	return ""
+	return missingSubnet
 }
 
 func (s *stateful) refresh(k key, q question, responseA map[string]dns.RR, responseIPs []string) {
@@ -87,8 +93,8 @@ func (s *stateful) refresh(k key, q question, responseA map[string]dns.RR, respo
 		s.state[k] = make(map[question]state)
 	}
 	if _, found := s.state[k][q]; !found {
-		s.state[k][q] = state {
-			ip: []string{},
+		s.state[k][q] = state{
+			ip:        []string{},
 			timestamp: time.Now(),
 		}
 	}
