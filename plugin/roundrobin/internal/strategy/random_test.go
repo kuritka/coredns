@@ -18,18 +18,18 @@ func TestRoundRobinIsSwitchingCorrectly(t *testing.T) {
 		"[4001:a1:1014::8b 4001:a1:1014::8a 4001:a1:1014::89]", "[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
 		"[4001:a1:1014::8a 4001:a1:1014::89 4001:a1:1014::8b]", "[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]"}
 
-	tests := []struct{
-		name		string
-		rr          []dns.RR
+	tests := []struct {
+		name             string
+		rr               []dns.RR
 		expectedResponse []string
 	}{
 		{"A and non A records",
-		[]dns.RR{
-			test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."),
-			test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
-			test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
-			test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
-			test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com.")},
+			[]dns.RR{
+				test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
+				test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com.")},
 			avariations,
 		},
 		{
@@ -38,8 +38,8 @@ func TestRoundRobinIsSwitchingCorrectly(t *testing.T) {
 				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
 				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
 				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3")},
-				avariations,
-			},
+			avariations,
+		},
 		{
 			"AAAA records only",
 			[]dns.RR{

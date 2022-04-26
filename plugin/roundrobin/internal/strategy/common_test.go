@@ -95,4 +95,3 @@ var filterAandAAAA = func(answers []dns.RR) (rr []dns.RR) {
 	}
 	return
 }
-

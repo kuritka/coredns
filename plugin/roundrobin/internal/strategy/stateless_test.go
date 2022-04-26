@@ -67,11 +67,11 @@ func TestRoundRobinStatelessInitialize(t *testing.T) {
 
 func TestRoundRobinStatelessShuffle(t *testing.T) {
 	tests := []struct {
-		name             string
-		answer           []dns.RR
-		expectedResponse []string
+		name                         string
+		answer                       []dns.RR
+		expectedResponse             []string
 		expectedNonAPositionsMapping map[int]int
-		requestOpt       []dns.RR
+		requestOpt                   []dns.RR
 	}{
 		{"A records",
 			[]dns.RR{
@@ -129,39 +129,137 @@ func TestRoundRobinStatelessShuffle(t *testing.T) {
 	}
 }
 
-func TestRoundRobinStatelessShuffleEmpty(t *testing.T) {
-	m := newMid()
-	m.AddRequestOptRaw(`_rr_state={"ip":[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]}`)
-	if len(NewStateless().Shuffle(m.req, m.res)) != 0 {
-		t.Errorf("The stateless retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
+func TestRoundRobinStatelessNoShuffle(t *testing.T) {
+	tests := []struct {
+		name             string
+		request          string
+		answer           []dns.RR
+		expectedResponse []dns.RR
+	}{
+		{"answer is empty for any state",
+			`_rr_state={"ip":[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]}`, []dns.RR{}, []dns.RR{}},
+		{"answer is empty for empty state", ``, []dns.RR{}, []dns.RR{}},
+		{"one record for any state", `_rr_state={"ip":[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]}`,
+			[]dns.RR{test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1")},
+			[]dns.RR{test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1")}},
+		{"one record for empty state", "",
+			[]dns.RR{test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1")},
+			[]dns.RR{test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1")}},
 	}
-
-	m = newMid()
-	if len(NewStateless().Shuffle(m.req, m.res)) != 0 {
-		t.Errorf("The stateless retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			m := newMid()
+			if len(test.request) != 0 {
+				m.AddRequestOptRaw(test.request)
+			}
+			for _, a := range test.answer {
+				m.AddResponseAnswer(a)
+			}
+			clientState := NewStateless().Shuffle(m.req, m.res)
+			if fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", getIPs(test.answer)) {
+				t.Errorf("The stateless retrieved different number of records. Expected %v got %v", getIPs(test.answer), getIPs(clientState))
+			}
+		})
 	}
 }
 
-func TestRoundRobinStatelessShuffleOne(t *testing.T) {
-	a := test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1")
-	m := newMid()
-	m.AddRequestOptRaw(`_rr_state={"ip":[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]}`)
-	m.AddResponseAnswer(a)
-	var answers = NewStateless().Shuffle(m.req, m.res)
-	if len(answers) != 1 {
-		t.Errorf("The stateless retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
+func TestRoundRobinStatelessDNSRecordsChange(t *testing.T) {
+	tests := []struct {
+		name           string
+		question       string
+		request        string
+		rr             []dns.RR
+		expectedResult []string
+	}{
+		{"Create records for alpha.cloud.example.com.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
+			},
+			[]string{"10.240.0.2", "10.240.0.3", "10.240.0.1"},
+		},
+		{"Alter record for alpha.cloud.example.com.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.4"),
+			},
+			[]string{"10.240.0.3", "10.240.0.1", "10.240.0.4", "10.240.0.2"},
+		},
+		{"Remove records for alpha.cloud.example.com.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.4"),
+			},
+			[]string{"10.240.0.4", "10.240.0.1"},
+		},
+		{"Add non A records for alpha.cloud.example.com.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.4"),
+				test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."),
+				test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com."),
+			},
+			[]string{"10.240.0.1", "10.240.0.4"},
+		},
+		{"Remove non A records for alpha.cloud.example.com.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.4"),
+			},
+			[]string{"10.240.0.4", "10.240.0.1"},
+		},
+		{"Exchange records for alpha.cloud.example.com.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			100.0.0.100"),
+				test.A("alpha.cloud.example.com.		300	IN	A			100.0.0.200"),
+			},
+			[]string{"100.0.0.200", "100.0.0.100"},
+		},
+		{"No change.",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			100.0.0.100"),
+				test.A("alpha.cloud.example.com.		300	IN	A			100.0.0.200"),
+			},
+			[]string{"100.0.0.100", "100.0.0.200"},
+		},
+		{"Remove records",
+			"alpha.cloud.example.com.", "200.10.0.0",
+			[]dns.RR{},
+			[]string{},
+		},
 	}
-	if answers[0].String() != a.String() {
-		t.Errorf("The stateless shuffle doesnt work.  Expected %s got %s", answers[0], a)
-	}
+	clientState := []dns.RR{}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// arrange
+			m := newMid()
+			m.SetQuestion(test.question, dns.TypeA)
+			m.AddRequestOpt(clientState...)
+			for _, a := range test.rr {
+				m.AddResponseAnswer(a)
+			}
 
-	m = newMid()
-	m.AddResponseAnswer(a)
-	answers = NewStateless().Shuffle(m.req, m.res)
-	if len(answers) != 1 {
-		t.Errorf("The stateless retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
-	}
-	if answers[0].String() != a.String() {
-		t.Errorf("The stateless shuffle doesnt work.  Expected %s got %s", answers[0], a)
+			//act
+			clientState = NewStateless().Shuffle(m.req, m.res)
+
+			// assert
+			if len(test.rr) != len(clientState) {
+				t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(test.rr), len(clientState))
+			}
+
+			if fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", test.expectedResult) {
+				t.Errorf("The stateful rotation is not working. Expecting %v but got %v.", test.expectedResult, getIPs(clientState))
+			}
+		})
 	}
 }
