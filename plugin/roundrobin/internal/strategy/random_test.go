@@ -2,83 +2,74 @@ package strategy
 
 import (
 	"fmt"
+	"github.com/miekg/dns"
 	"testing"
 
 	"github.com/coredns/coredns/plugin/test"
 )
 
-const maxAttemptsToReachVariation = 100
-
-var (
-	avariations = []string{"[10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.3 10.240.0.2]",
+func TestRoundRobinIsSwitchingCorrectly(t *testing.T) {
+	const maxAttemptsToReachVariation = 100
+	var avariations = []string{"[10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.3 10.240.0.2]",
 		"[10.240.0.3 10.240.0.2 10.240.0.1]", "[10.240.0.3 10.240.0.1 10.240.0.2]",
 		"[10.240.0.2 10.240.0.1 10.240.0.3]", "[10.240.0.2 10.240.0.3 10.240.0.1]"}
 
-	aaaavariations = []string{"[4001:a1:1014::89 4001:a1:1014::8a 4001:a1:1014::8b]", "[4001:a1:1014::89 4001:a1:1014::8b 4001:a1:1014::8a]",
+	var aaaavariations = []string{"[4001:a1:1014::89 4001:a1:1014::8a 4001:a1:1014::8b]", "[4001:a1:1014::89 4001:a1:1014::8b 4001:a1:1014::8a]",
 		"[4001:a1:1014::8b 4001:a1:1014::8a 4001:a1:1014::89]", "[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
 		"[4001:a1:1014::8a 4001:a1:1014::89 4001:a1:1014::8b]", "[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]"}
-)
 
-func TestRoundRobinRandomAMixed(t *testing.T) {
-	m := newMid()
-	m.AddResponseAnswer(test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."))
-	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
-	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"))
-	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"))
-	m.AddResponseAnswer(test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com."))
-
-	for _, v := range avariations {
-		var x int
-		for x = 0; x < maxAttemptsToReachVariation; x++ {
-			result := NewRandom().Shuffle(m.req, m.res)
-			if fmt.Sprintf("%v", getIPs(result)) == v {
-				break
-			}
-		}
-		if x == maxAttemptsToReachVariation {
-			t.Errorf("The Random shuffle is not working as expected. %v didn't occure during %v attempts", v, x)
-		}
+	tests := []struct{
+		name		string
+		rr          []dns.RR
+		expectedResponse []string
+	}{
+		{"A and non A records",
+		[]dns.RR{
+			test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."),
+			test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+			test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+			test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
+			test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com.")},
+			avariations,
+		},
+		{
+			"A records only",
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3")},
+				avariations,
+			},
+		{
+			"AAAA records only",
+			[]dns.RR{
+				test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::89"),
+				test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8a"),
+				test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8b"),
+			},
+			aaaavariations,
+		},
 	}
-}
 
-func TestRoundRobinRandomAOnly(t *testing.T) {
-	m := newMid()
-	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
-	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"))
-	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"))
-
-	for _, v := range avariations {
-		var x int
-		for x = 0; x < maxAttemptsToReachVariation; x++ {
-			result := NewRandom().Shuffle(m.req, m.res)
-			if fmt.Sprintf("%v", getIPs(result)) == v {
-				break
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			m := newMid()
+			m.res.Answer = test.rr
+			for _, v := range test.expectedResponse {
+				var x int
+				for x = 0; x < maxAttemptsToReachVariation; x++ {
+					result := NewRandom().Shuffle(m.req, m.res)
+					if fmt.Sprintf("%v", getIPs(result)) == v {
+						break
+					}
+				}
+				if x == maxAttemptsToReachVariation {
+					t.Errorf("The Random shuffle is not working as expected. %v didn't occure during %v attempts", v, x)
+				}
 			}
-		}
-		if x == maxAttemptsToReachVariation {
-			t.Errorf("The Random shuffle is not working as expected. %v didn't occure during %v attempts", v, x)
-		}
+		})
 	}
-}
 
-func TestRoundRobinRandomAAAAOnly(t *testing.T) {
-	m := newMid()
-	m.AddResponseAnswer(test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::89"))
-	m.AddResponseAnswer(test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8a"))
-	m.AddResponseAnswer(test.AAAA("ipv6.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8b"))
-
-	for _, v := range aaaavariations {
-		var x int
-		for x = 0; x < maxAttemptsToReachVariation; x++ {
-			result := NewRandom().Shuffle(m.req, m.res)
-			if fmt.Sprintf("%v", getIPs(result)) == v {
-				break
-			}
-		}
-		if x == maxAttemptsToReachVariation {
-			t.Errorf("The Random shuffle is not working as expected. %v didn't occure during %v attempts", v, x)
-		}
-	}
 }
 
 func TestRoundRobinRandomEmptyAnswer(t *testing.T) {
