@@ -69,7 +69,6 @@ func TestRoundRobinIsSwitchingCorrectly(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestRoundRobinRandomEmptyAnswer(t *testing.T) {
@@ -80,7 +79,7 @@ func TestRoundRobinRandomEmptyAnswer(t *testing.T) {
 	}
 }
 
-func TestRoundRobinRandomARecordsGoesFirst(t *testing.T) {
+func TestRoundRobinRandomOrderForAandNonA(t *testing.T) {
 	m := newMid()
 	m.AddResponseAnswer(test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."))
 	m.AddResponseAnswer(test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"))
@@ -93,7 +92,7 @@ func TestRoundRobinRandomARecordsGoesFirst(t *testing.T) {
 	}
 }
 
-func TestRoundRobinRandomStableOrderForNonAandAAA(t *testing.T) {
+func TestRoundRobinRandomStableOrderForNonA(t *testing.T) {
 	m := newMid()
 	m.AddResponseAnswer(test.CNAME("alpha.cloud.example.com.	300	IN	CNAME		beta.cloud.example.com."))
 	m.AddResponseAnswer(test.MX("alpha.cloud.example.com.			300	IN	MX		1	mxa-alpha.cloud.example.com."))

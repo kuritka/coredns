@@ -18,7 +18,7 @@ func TestRoundRobinStatefulShuffle(t *testing.T) {
 		expectedNonAPositionsMapping map[int]int
 	}{
 		{
-			name:     "IPv4 mixed answer",
+			name:     "A and non A records",
 			question: "alpha.cloud.example.com.", dnsType: dns.TypeA,
 			expectedResults: []string{"[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]", "[10.240.0.3 10.240.0.4 10.240.0.1 10.240.0.2]",
 				"[10.240.0.4 10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.2 10.240.0.3 10.240.0.4]"},
@@ -33,7 +33,7 @@ func TestRoundRobinStatefulShuffle(t *testing.T) {
 			expectedNonAPositionsMapping: map[int]int{0: 4, 4: 5},
 		},
 		{
-			name:     "IPv4 only A records",
+			name:     "A records only",
 			question: "alpha.cloud.example.com.", dnsType: dns.TypeA,
 			expectedResults: []string{"[10.240.0.2 10.240.0.3 10.240.0.4 10.240.0.1]", "[10.240.0.3 10.240.0.4 10.240.0.1 10.240.0.2]",
 				"[10.240.0.4 10.240.0.1 10.240.0.2 10.240.0.3]", "[10.240.0.1 10.240.0.2 10.240.0.3 10.240.0.4]"},
@@ -46,7 +46,7 @@ func TestRoundRobinStatefulShuffle(t *testing.T) {
 			expectedNonAPositionsMapping: map[int]int{},
 		},
 		{
-			name:     "IPv6 mixed answer",
+			name:     "AAAA and non AAAA records",
 			question: "alpha.cloud.example.com.", dnsType: dns.TypeA,
 			expectedResults: []string{"[4001:a1:1014::8a 4001:a1:1014::8b 4001:a1:1014::89]", "[4001:a1:1014::8b 4001:a1:1014::89 4001:a1:1014::8a]",
 				"[4001:a1:1014::89 4001:a1:1014::8a 4001:a1:1014::8b]"},
