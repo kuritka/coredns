@@ -15,7 +15,7 @@ func NewRandom() *Random {
 	return &Random{}
 }
 
-func (r *Random) Shuffle(_ request.Request, msg *dns.Msg) []dns.RR {
+func (r *Random) Shuffle(_ request.Request, msg *dns.Msg) ([]dns.RR, error) {
 	var shuffled []dns.RR
 	var skipped []dns.RR
 	for _, a := range msg.Answer {
@@ -28,5 +28,5 @@ func (r *Random) Shuffle(_ request.Request, msg *dns.Msg) []dns.RR {
 	}
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(shuffled), func(i, j int) { shuffled[i], shuffled[j] = shuffled[j], shuffled[i] })
-	return append(shuffled, skipped...)
+	return append(shuffled, skipped...), nil
 }

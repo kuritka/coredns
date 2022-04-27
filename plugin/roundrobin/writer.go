@@ -1,6 +1,7 @@
 package roundrobin
 
 import (
+	"fmt"
 	"github.com/coredns/coredns/plugin/roundrobin/internal/strategy"
 	"github.com/coredns/coredns/request"
 	"github.com/miekg/dns"
@@ -22,6 +23,9 @@ func NewMessageWriter(w dns.ResponseWriter, msg *dns.Msg, strategy strategy.Shuf
 
 // WriteMsg implements the dns.ResponseWriter interface.
 func (r *MessageWriter) WriteMsg(msg *dns.Msg) error {
+	if msg == nil || len(msg.Question) == 0 {
+		return fmt.Errorf("writing mesage (nil)")
+	}
 	if msg.Rcode != dns.RcodeSuccess {
 		return r.ResponseWriter.WriteMsg(msg)
 	}
