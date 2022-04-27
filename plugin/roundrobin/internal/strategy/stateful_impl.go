@@ -38,9 +38,13 @@ func newStateful() *stateful {
 	}
 }
 
-func (s *stateful) handle(req *request.Request, res *dns.Msg) (rr []dns.RR, err error) {
+func (s *stateful) update(req *request.Request, res *dns.Msg) (rr []dns.RR, err error) {
 	if req == nil {
 		err = fmt.Errorf("nil request")
+		return
+	}
+	if res == nil {
+		err = fmt.Errorf("nil response")
 		return
 	}
 	if len(req.Req.Question) == 0 {

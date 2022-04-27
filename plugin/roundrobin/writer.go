@@ -31,7 +31,9 @@ func (r *MessageWriter) WriteMsg(msg *dns.Msg) error {
 		return r.ResponseWriter.WriteMsg(msg)
 	}
 
-	msg.Answer = r.strategy.Shuffle(r.state, msg)
+	if answer, err := r.strategy.Shuffle(r.state, msg); err == nil {
+		msg.Answer = answer
+	}
 
 	return r.ResponseWriter.WriteMsg(msg)
 }

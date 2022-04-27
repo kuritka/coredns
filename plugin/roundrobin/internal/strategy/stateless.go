@@ -12,6 +12,6 @@ func NewStateless() *Stateless {
 	return &Stateless{}
 }
 
-func (r *Stateless) Shuffle(req request.Request, msg *dns.Msg) []dns.RR {
+func (r *Stateless) Shuffle(req request.Request, msg *dns.Msg) ([]dns.RR, error) {
 	return newStateless(req.Req, msg).updateState().rotate().getAnswers()
 }

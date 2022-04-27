@@ -2,6 +2,7 @@ package strategy
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/miekg/dns"
 	"strings"
 )
@@ -16,6 +17,7 @@ type stateless struct {
 	responseIPs []string
 	// contains all response records which are not A nor AAAA
 	responseNoA []dns.RR
+	err error
 }
 
 func newStateless(request *dns.Msg, response *dns.Msg) (s *stateless) {
@@ -29,6 +31,7 @@ func newStateless(request *dns.Msg, response *dns.Msg) (s *stateless) {
 		}
 	}
 	if request == nil || response == nil {
+		s.err = fmt.Errorf("nil response or request")
 		return
 	}
 	s = empty()
@@ -90,10 +93,10 @@ func (s *stateless) rotate() *stateless {
 }
 
 // getAnswers recreates Answer slice from original answers
-func (s *stateless) getAnswers() []dns.RR {
+func (s *stateless) getAnswers() ([]dns.RR, error) {
 	var shuffled []dns.RR
 	for _, ip := range s.IPs {
 		shuffled = append(shuffled, s.responseA[ip])
 	}
-	return append(shuffled, s.responseNoA...)
+	return append(shuffled, s.responseNoA...), s.err
 }

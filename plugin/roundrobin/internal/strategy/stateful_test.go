@@ -103,7 +103,11 @@ func TestRoundRobinStatefulShuffle(t *testing.T) {
 				m := newMid()
 				m.SetQuestion(test.question, test.dnsType)
 				m.res.Answer = test.answer
-				clientState := s.Shuffle(m.req, m.res)
+				clientState, e := s.Shuffle(m.req, m.res)
+
+				if e != nil {
+					t.Errorf("unexpepcted error %s", e)
+				}
 
 				if len(test.expectedResults) > 0 && fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", test.expectedResults[i%len(test.expectedResults)]) {
 					t.Errorf("%v: The stateful rotation is not working. Expecting %v but got %v.", i, test.expectedResults[i%len(test.expectedResults)], getIPs(clientState))
@@ -127,7 +131,11 @@ func TestRoundRobinStatefulShuffle(t *testing.T) {
 
 func TestRoundRobinStatefulNoQuestion(t *testing.T) {
 	m := newMid()
-	if len(NewStateful().Shuffle(m.req, m.res)) != 0 {
+	clientState, e := NewStateful().Shuffle(m.req, m.res)
+	if e == nil {
+		t.Errorf("expecting error")
+	}
+	if len(clientState) != 0 {
 		t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(m.res.Answer), 0)
 	}
 }
@@ -190,7 +198,7 @@ func TestRoundRobinStatefulState(t *testing.T) {
 			}
 
 			//act
-			_ = s.Shuffle(m.req, m.res)
+			_,_ = s.Shuffle(m.req, m.res)
 
 			// assert
 			ipMap := ipsToSet(getIPs(test.rr))
@@ -294,9 +302,13 @@ func TestRoundRobinStatefulDNSRecordsChange(t *testing.T) {
 			}
 
 			//act
-			clientState := s.Shuffle(m.req, m.res)
+			clientState,e := s.Shuffle(m.req, m.res)
 
 			// assert
+			if e != nil {
+				t.Errorf("unexpepcted error %s", e)
+			}
+
 			if len(test.rr) != len(clientState) {
 				t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(test.rr), len(clientState))
 			}

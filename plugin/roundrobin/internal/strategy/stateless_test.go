@@ -44,7 +44,11 @@ func TestRoundRobinStatelessInitialize(t *testing.T) {
 			m.AddResponseAnswer(mx)
 			m.AddRequestOptRaw(raw.value)
 
-			var clientState = NewStateless().Shuffle(m.req, m.res)
+			var clientState, err = NewStateless().Shuffle(m.req, m.res)
+
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 
 			if len(clientState) != len(m.res.Answer) {
 				t.Errorf("The stateless retrieved different number of records. Expected %v got %v", len(m.res.Answer), len(clientState))
@@ -102,15 +106,19 @@ func TestRoundRobinStatelessShuffle(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for i := 0; i < 10; i++ {
+
 				m := newMid()
 				m.res.Answer = test.answer
 				// state, from the previous loop that arrived in the DNS query
 				m.AddRequestOpt(test.requestOpt...)
-				var clientState = NewStateless().Shuffle(m.req, m.res)
+				var clientState, err = NewStateless().Shuffle(m.req, m.res)
 
 				// save the new state for the next query
 				test.requestOpt = filterAandAAAA(clientState)
 
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
 				if fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", test.expectedResponse[i%len(test.expectedResponse)]) {
 					t.Errorf("%v: The stateless rotation is not working. Expecting %v but got %v.", i, test.expectedResponse[i%len(test.expectedResponse)], getIPs(clientState))
 				}
@@ -148,6 +156,7 @@ func TestRoundRobinStatelessNoShuffle(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			// arrange
 			m := newMid()
 			if len(test.request) != 0 {
 				m.AddRequestOptRaw(test.request)
@@ -155,7 +164,13 @@ func TestRoundRobinStatelessNoShuffle(t *testing.T) {
 			for _, a := range test.answer {
 				m.AddResponseAnswer(a)
 			}
-			clientState := NewStateless().Shuffle(m.req, m.res)
+			// act
+			clientState, err  := NewStateless().Shuffle(m.req, m.res)
+
+			// assert
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 			if fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", getIPs(test.answer)) {
 				t.Errorf("The stateless retrieved different number of records. Expected %v got %v", getIPs(test.answer), getIPs(clientState))
 			}
@@ -239,6 +254,7 @@ func TestRoundRobinStatelessDNSRecordsChange(t *testing.T) {
 		},
 	}
 	clientState := []dns.RR{}
+	var err error
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// arrange
@@ -250,9 +266,12 @@ func TestRoundRobinStatelessDNSRecordsChange(t *testing.T) {
 			}
 
 			//act
-			clientState = NewStateless().Shuffle(m.req, m.res)
+			clientState, err = NewStateless().Shuffle(m.req, m.res)
 
 			// assert
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 			if len(test.rr) != len(clientState) {
 				t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(test.rr), len(clientState))
 			}
