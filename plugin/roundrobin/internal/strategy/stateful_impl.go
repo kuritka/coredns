@@ -8,10 +8,6 @@ import (
 )
 
 const (
-	// defaultTTLSeconds defines the period after which the resource is removed
-	defaultTTLSeconds = 600
-	// garbageCollectionPeriodSeconds defines the period when garbage collection is triggered
-	garbageCollectionPeriodSeconds = 5
 	missingSubnet                  = "missing-subnet"
 	emptySubnet                    = "empty-subnet"
 )
