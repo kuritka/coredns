@@ -62,7 +62,9 @@ func (s *wStub) WriteMsg(msg *dns.Msg) error{
 	return nil
 }
 
-type shufflerStub struct{strategy.Shuffler}
+type shufflerStub struct{
+	strategy.Shuffler
+}
 func (s *shufflerStub) Shuffle(req request.Request, msg *dns.Msg) ([]dns.RR, error){
 	return []dns.RR{}, fmt.Errorf("skip shuffling")
 }

@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	// defaultTTLSeconds defines when state object is garbage collected
+	// defaultTTLSeconds defines the period after which the resource is removed
 	defaultTTLSeconds = 600
 	// garbageCollectionPeriodSeconds defines the period when garbage collection is triggered
-	garbageCollectionPeriodSeconds = 1200
+	garbageCollectionPeriodSeconds = 5
 	missingSubnet                  = "missing-subnet"
 	emptySubnet                    = "empty-subnet"
 )
@@ -32,9 +32,15 @@ type stateful struct {
 }
 
 func newStateful() *stateful {
-	return &stateful{
-		state: make(map[key]map[question]state),
-	}
+	this := new(stateful)
+	this.state = make(map[key]map[question]state)
+	gc := newGarbageCollector(&this.state)
+	go func() {
+		for range time.Tick(time.Second * garbageCollectionPeriodSeconds) {
+			gc.collect()
+		}
+	}()
+	return this
 }
 
 func (s *stateful) update(req *request.Request, res *dns.Msg) (rr []dns.RR, err error) {
