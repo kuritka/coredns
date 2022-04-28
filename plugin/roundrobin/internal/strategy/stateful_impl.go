@@ -8,7 +8,6 @@ import (
 )
 
 const (
-	//TODO: garbage collection
 	// defaultTTLSeconds defines when state object is garbage collected
 	defaultTTLSeconds = 600
 	// garbageCollectionPeriodSeconds defines the period when garbage collection is triggered
