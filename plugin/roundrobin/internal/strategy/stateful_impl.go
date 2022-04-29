@@ -23,13 +23,15 @@ type state struct {
 	ip        []string
 }
 
+type mstate map[key]map[question]state
+
 type stateful struct {
-	state map[key]map[question]state
+	state mstate
 }
 
 func newStateful() *stateful {
 	this := new(stateful)
-	this.state = make(map[key]map[question]state)
+	this.state = make(mstate)
 	gc := newGarbageCollector(&this.state, garbageCollectionDefaultTTLSeconds)
 	go func() {
 		for range time.Tick(time.Second * garbageCollectionPeriodSeconds) {
@@ -93,17 +95,10 @@ func (s *stateful) readSubnet(req *dns.Msg) string {
 }
 
 func (s *stateful) refresh(k key, q question, responseA map[string]dns.RR, responseIPs []string) {
-	var st state
-	if _, found := s.state[k]; !found {
-		s.state[k] = make(map[question]state)
+	if !s.state.exists(k,q){
+		s.state.upsert(k,q, state{ip: []string{},timestamp: time.Now()})
 	}
-	if _, found := s.state[k][q]; !found {
-		s.state[k][q] = state{
-			ip:        []string{},
-			timestamp: time.Now(),
-		}
-	}
-	st = s.state[k][q]
+	var st = s.state[k][q]
 	st.updateState(responseA, responseIPs)
 	st.ip = rotate(st.ip)
 	s.state[k][q] = st
@@ -127,4 +122,19 @@ func (s *state) updateState(responseA map[string]dns.RR, responseIPs []string) {
 		}
 	}
 	s.ip = newIPs
+}
+
+func (m mstate) exists(k key, q question) (exists bool) {
+	if _, ok := m[k]; ok {
+		_, exists = m[k][q]
+	}
+	return
+}
+
+// upsert add or insert new item to mstate
+func (m mstate) upsert(k key, q question, s state) {
+	if _, ok := m[k]; !ok {
+		m[k] = make(map[question]state)
+	}
+	m[k][q] = s
 }

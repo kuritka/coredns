@@ -104,13 +104,10 @@ type stateFlatten struct {
 	ips       []string
 }
 
-func buildState(tests []stateFlatten) map[key]map[question]state{
-	s := make(map[key]map[question]state)
+func buildState(tests []stateFlatten) mstate {
+	m := make(mstate)
 	for _, test := range tests {
-		if _, ok := s[key(test.key)]; !ok {
-			s[key(test.key)] = make(map[question]state)
-		}
-		s[key(test.key)][question(test.question)] = state{test.timestamp, test.ips}
+		m.upsert(key(test.key),question(test.question),state{test.timestamp, test.ips})
 	}
-	return s
+	return m
 }

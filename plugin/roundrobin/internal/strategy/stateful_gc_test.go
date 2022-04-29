@@ -34,10 +34,7 @@ func TestStatefulGCRemoveItem(t *testing.T) {
 
 			for i, v := range flattenTests {
 				// check if state for key x question exists
-				exists := false
-				if _, ok := s[key(v.key)]; ok {
-					_, exists = s[key(v.key)][question(v.question)]
-				}
+				exists := s.exists(key(v.key),question(v.question))
 
 				if  test.survivalRowIndexes[i] != exists {
 					t.Fatalf("Inconsistent state. Check if %v should be there or not ",v)
