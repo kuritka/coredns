@@ -11,27 +11,28 @@ const (
 
 // garbageCollector clear the state of dead records
 type garbageCollector struct {
-	state *map[key]map[question]state
+	state      *map[key]map[question]state
+	ttlSeconds    time.Duration
 }
 
-func newGarbageCollector(state *map[key]map[question]state) *garbageCollector {
+func newGarbageCollector(state *map[key]map[question]state, ttlSeconds int) *garbageCollector {
 	return &garbageCollector{
-		state: state,
+		state:         state,
+		ttlSeconds:    time.Duration(ttlSeconds),
 	}
 }
 
-func (gc *garbageCollector) collect(){
-
+func (gc *garbageCollector) collect() {
 	for k, qm := range *gc.state {
 		for q, s := range qm {
 			// remove death states for death questions
-			if s.timestamp.Before(time.Now().Add(-garbageCollectionDefaultTTLSeconds * time.Second)){
+			if s.timestamp.Before(time.Now().Add(-gc.ttlSeconds * time.Second)) {
 				delete(qm, q)
 			}
 		}
-		// remove subnet key, if contains 0 items
+		// remove key, if contains 0 items
 		if len(qm) == 0 {
-			delete(*gc.state,k)
+			delete(*gc.state, k)
 		}
 	}
 }

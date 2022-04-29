@@ -5,6 +5,7 @@ import (
 	"github.com/coredns/coredns/request"
 	"github.com/miekg/dns"
 	"net"
+	"time"
 )
 
 type mid struct {
@@ -94,4 +95,22 @@ var filterAandAAAA = func(answers []dns.RR) (rr []dns.RR) {
 		rr = append(rr, rrMap[ip])
 	}
 	return
+}
+
+type stateFlatten struct {
+	key       string
+	question  string
+	timestamp time.Time
+	ips       []string
+}
+
+func buildState(tests []stateFlatten) map[key]map[question]state{
+	s := make(map[key]map[question]state)
+	for _, test := range tests {
+		if _, ok := s[key(test.key)]; !ok {
+			s[key(test.key)] = make(map[question]state)
+		}
+		s[key(test.key)][question(test.question)] = state{test.timestamp, test.ips}
+	}
+	return s
 }

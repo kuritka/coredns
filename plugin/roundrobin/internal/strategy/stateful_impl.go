@@ -30,7 +30,7 @@ type stateful struct {
 func newStateful() *stateful {
 	this := new(stateful)
 	this.state = make(map[key]map[question]state)
-	gc := newGarbageCollector(&this.state)
+	gc := newGarbageCollector(&this.state, garbageCollectionDefaultTTLSeconds)
 	go func() {
 		for range time.Tick(time.Second * garbageCollectionPeriodSeconds) {
 			gc.collect()
