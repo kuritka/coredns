@@ -6,6 +6,19 @@ import (
 	"time"
 )
 
+
+func TestStatefulGCCleaning(t *testing.T) {
+	// clean on empty
+	// clean all records
+}
+
+
+func TestStatefulGCCleaningLive(t *testing.T) {
+	// add records
+	// remove records live
+}
+
+
 func TestStatefulGCRemoveItem(t *testing.T) {
 	flattenTests := []stateFlatten {
 		{"10.20.30.40", "test.example.com.", time.Now().Add(time.Hour*-5), []string{"10.10.10.10"}},
