@@ -100,7 +100,7 @@ func (s *stateful) refresh(k key, q question, responseA map[string]dns.RR, respo
 		s.state.upsert(k,q, state{ip: []string{},timestamp: time.Now()})
 	}
 	s.state[k][q].updateState(responseA, responseIPs)
-	s.state[k][q].ip = rotate(s.state[k][q].ip)
+	s.state[k][q].rotateIPs()
 }
 
 func (s *state) updateState(responseA map[string]dns.RR, responseIPs []string) {
@@ -121,6 +121,11 @@ func (s *state) updateState(responseA map[string]dns.RR, responseIPs []string) {
 		}
 	}
 	s.ip = newIPs
+	s.timestamp = time.Now()
+}
+
+func (s *state) rotateIPs() {
+	s.ip = rotate(s.ip)
 }
 
 func (m mstate) exists(k key, q question) (exists bool) {
