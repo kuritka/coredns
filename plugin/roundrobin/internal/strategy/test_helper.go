@@ -107,7 +107,7 @@ type stateFlatten struct {
 func buildState(tests []stateFlatten) mstate {
 	m := make(mstate)
 	for _, test := range tests {
-		m.upsert(key(test.key),question(test.question),state{test.timestamp, test.ips})
+		m.upsert(key(test.key), question(test.question), state{test.timestamp, test.ips})
 	}
 	return m
 }

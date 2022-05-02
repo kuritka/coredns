@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	missingSubnet                  = "missing-subnet"
-	emptySubnet                    = "empty-subnet"
+	missingSubnet = "missing-subnet"
+	emptySubnet   = "empty-subnet"
 )
 
 // <clientIP>_<clientSubnet>
@@ -96,8 +96,8 @@ func (s *stateful) readSubnet(req *dns.Msg) string {
 }
 
 func (s *stateful) refresh(k key, q question, responseA map[string]dns.RR, responseIPs []string) {
-	if !s.state.exists(k,q){
-		s.state.upsert(k,q, state{ip: []string{},timestamp: time.Now()})
+	if !s.state.exists(k, q) {
+		s.state.upsert(k, q, state{ip: []string{}, timestamp: time.Now()})
 	}
 	s.state[k][q].updateState(responseA, responseIPs)
 	s.state[k][q].rotateIPs()

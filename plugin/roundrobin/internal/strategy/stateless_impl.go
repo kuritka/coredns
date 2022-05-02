@@ -17,7 +17,7 @@ type stateless struct {
 	responseIPs []string
 	// contains all response records which are not A nor AAAA
 	responseNoA []dns.RR
-	err error
+	err         error
 }
 
 func newStateless(request *dns.Msg, response *dns.Msg) (s *stateless) {

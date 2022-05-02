@@ -198,7 +198,7 @@ func TestRoundRobinStatefulState(t *testing.T) {
 			}
 
 			//act
-			_,_ = s.Shuffle(m.req, m.res)
+			_, _ = s.Shuffle(m.req, m.res)
 
 			// assert
 			ipMap := ipsToSet(getIPs(test.rr))
@@ -302,7 +302,7 @@ func TestRoundRobinStatefulDNSRecordsChange(t *testing.T) {
 			}
 
 			//act
-			clientState,e := s.Shuffle(m.req, m.res)
+			clientState, e := s.Shuffle(m.req, m.res)
 
 			// assert
 			if e != nil {

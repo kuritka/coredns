@@ -12,13 +12,13 @@ const (
 // garbageCollector clear the state of dead records
 type garbageCollector struct {
 	state      mstate
-	ttlSeconds    time.Duration
+	ttlSeconds time.Duration
 }
 
 func newGarbageCollector(state mstate, ttlSeconds int) *garbageCollector {
 	return &garbageCollector{
-		state:         state,
-		ttlSeconds:    time.Duration(ttlSeconds),
+		state:      state,
+		ttlSeconds: time.Duration(ttlSeconds),
 	}
 }
 

@@ -13,9 +13,9 @@ func TestWriteMessage(t *testing.T) {
 	var tests = []struct {
 		name          string
 		expectedError bool
-		setQuestion bool
-		msg         *dns.Msg
-		shuffler    strategy.Shuffler
+		setQuestion   bool
+		msg           *dns.Msg
+		shuffler      strategy.Shuffler
 	}{
 		{"nil dns.Msg", true, true, nil, strategy.NewStateful()},
 		{"nil dns.Msg.Question", true, false, &dns.Msg{}, strategy.NewStateful()},
@@ -34,7 +34,7 @@ func TestWriteMessage(t *testing.T) {
 			}
 
 			// act
-			if test.setQuestion  && test.msg != nil{
+			if test.setQuestion && test.msg != nil {
 				test.msg.SetQuestion("alpha.cloud.example.com.", dns.TypeA)
 			}
 			err = w.WriteMsg(test.msg)
@@ -53,18 +53,20 @@ func TestWriteMessage(t *testing.T) {
 	}
 }
 
-type wStub struct{
+type wStub struct {
 	dns.ResponseWriter
 	AnswersCount int
 }
-func (s *wStub) WriteMsg(msg *dns.Msg) error{
+
+func (s *wStub) WriteMsg(msg *dns.Msg) error {
 	s.AnswersCount = len(msg.Answer)
 	return nil
 }
 
-type shufflerStub struct{
+type shufflerStub struct {
 	strategy.Shuffler
 }
-func (s *shufflerStub) Shuffle(req request.Request, msg *dns.Msg) ([]dns.RR, error){
+
+func (s *shufflerStub) Shuffle(req request.Request, msg *dns.Msg) ([]dns.RR, error) {
 	return []dns.RR{}, fmt.Errorf("skip shuffling")
 }

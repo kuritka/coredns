@@ -39,16 +39,16 @@ func TestStatefulGCCleaningLive(t *testing.T) {
 		{"10.20.30.40", "alpha.example.com.", time.Now().Add(time.Hour * -5), []string{"10.10.10.10", "20.20.20.20"}},
 	}
 	tests := []struct {
-		name       string
-		question   string
-		from       string
-		answer     []dns.RR
+		name     string
+		question string
+		from     string
+		answer   []dns.RR
 	}{
-		{"Retrieving records with old timestamp","alpha.example.com.", "10.20.30.40",
+		{"Retrieving records with old timestamp", "alpha.example.com.", "10.20.30.40",
 			[]dns.RR{
 				test.A("alpha.cloud.example.com.		300	IN	A			10.10.10.10"),
 				test.A("alpha.cloud.example.com.		300	IN	A			20.20.20.20")}},
-		{"Call once again","alpha.example.com.", "10.20.30.40",
+		{"Call once again", "alpha.example.com.", "10.20.30.40",
 			[]dns.RR{
 				test.A("alpha.cloud.example.com.		300	IN	A			10.10.10.10"),
 				test.A("alpha.cloud.example.com.		300	IN	A			20.20.20.20")}},

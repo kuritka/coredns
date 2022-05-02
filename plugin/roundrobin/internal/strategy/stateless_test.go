@@ -165,7 +165,7 @@ func TestRoundRobinStatelessNoShuffle(t *testing.T) {
 				m.AddResponseAnswer(a)
 			}
 			// act
-			clientState, err  := NewStateless().Shuffle(m.req, m.res)
+			clientState, err := NewStateless().Shuffle(m.req, m.res)
 
 			// assert
 			if err != nil {
