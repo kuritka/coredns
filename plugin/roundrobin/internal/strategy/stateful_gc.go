@@ -6,7 +6,7 @@ const (
 	// garbageCollectionDefaultTTLSeconds defines the period after which the resource is removed
 	garbageCollectionDefaultTTLSeconds = 600
 	// garbageCollectionPeriodSeconds defines the period when garbage collection is triggered
-	garbageCollectionPeriodSeconds = 5
+	garbageCollectionPeriodSeconds = 10
 )
 
 // garbageCollector clear the state of dead records

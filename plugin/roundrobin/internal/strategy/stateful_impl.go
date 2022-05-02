@@ -36,6 +36,7 @@ func newStateful() *stateful {
 	go func() {
 		for range time.Tick(time.Second * garbageCollectionPeriodSeconds) {
 			gc.collect()
+			fmt.Printf("cleaning %v\n", &this.state)
 		}
 	}()
 	return this

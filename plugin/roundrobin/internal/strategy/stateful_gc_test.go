@@ -6,8 +6,31 @@ import (
 	"time"
 )
 
-
+// po tom co updatnu record, tak musim zmenit timestamp => timestamp check!
+// handlovat, kdyz udelam A a AAAA request
 func TestStatefulGCCleaning(t *testing.T) {
+	flattenTests := []stateFlatten{
+		{"10.20.30.40", "test.example.com.", time.Now().Add(time.Hour * -5), []string{"10.10.10.10"}},
+		{"10.20.30.40", "alpha.example.com.", time.Now().Add(time.Minute * -5), []string{"10.10.10.10", "20.20.20.20"}},
+	}
+	fstate := buildState(flattenTests)
+	tests := []struct{
+		name string
+		ttlSeconds         int
+		state *mstate
+	}{
+		{"clean on empty", 5, new(mstate)},
+		{"clean all records", 5, &fstate},
+		{"nil state", 5, nil},
+	}
+	for _ ,test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			newGarbageCollector(test.state, test.ttlSeconds).collect()
+			if (test.state != nil) &&  len(*test.state) != 0 {
+				t.Fatalf("Expected empty state but have %v records", len(*test.state))
+			}
+		})
+	}
 	// clean on empty
 	// clean all records
 }
