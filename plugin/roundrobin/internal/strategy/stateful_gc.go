@@ -11,11 +11,11 @@ const (
 
 // garbageCollector clear the state of dead records
 type garbageCollector struct {
-	state      *mstate
+	state      mstate
 	ttlSeconds    time.Duration
 }
 
-func newGarbageCollector(state *mstate, ttlSeconds int) *garbageCollector {
+func newGarbageCollector(state mstate, ttlSeconds int) *garbageCollector {
 	return &garbageCollector{
 		state:         state,
 		ttlSeconds:    time.Duration(ttlSeconds),
@@ -23,7 +23,7 @@ func newGarbageCollector(state *mstate, ttlSeconds int) *garbageCollector {
 }
 
 func (gc *garbageCollector) collect() {
-	for k, qm := range *gc.state {
+	for k, qm := range gc.state {
 		for q, s := range qm {
 			// remove death states for death questions
 			if s.timestamp.Before(time.Now().Add(-gc.ttlSeconds * time.Second)) {
@@ -32,7 +32,7 @@ func (gc *garbageCollector) collect() {
 		}
 		// remove key, if contains 0 items
 		if len(qm) == 0 {
-			delete(*gc.state, k)
+			delete(gc.state, k)
 		}
 	}
 }

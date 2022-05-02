@@ -37,10 +37,12 @@
 4001:a1:1014::8a myhost.com
 4001:a1:1014::8b myhost.com
 
-200.0.0.1 test.myhost.com
-200.0.0.2 test.myhost.com
-200.0.0.3 test.myhost.com
-200.0.0.4 test.myhost.com
+120.31.0.1 test.myhost.com
+120.31.0.2 test.myhost.com
+120.31.0.3 test.myhost.com
+120.31.0.4 test.myhost.com
+120.31.0.5 test.myhost.com
+120.31.0.6 test.myhost.com
 4001:502:f3ff::88 test.myhost.com
 4001:a1:1014::89 test.myhost.com
 4001:a1:1014::8a test.myhost.com

@@ -13,26 +13,23 @@ func TestStatefulGCCleaning(t *testing.T) {
 		{"10.20.30.40", "test.example.com.", time.Now().Add(time.Hour * -5), []string{"10.10.10.10"}},
 		{"10.20.30.40", "alpha.example.com.", time.Now().Add(time.Minute * -5), []string{"10.10.10.10", "20.20.20.20"}},
 	}
-	fstate := buildState(flattenTests)
 	tests := []struct{
 		name string
 		ttlSeconds         int
-		state *mstate
+		state mstate
 	}{
-		{"clean on empty", 5, new(mstate)},
-		{"clean all records", 5, &fstate},
+		{"clean on empty", 5, mstate{}},
+		{"clean all records", 5, buildState(flattenTests)},
 		{"nil state", 5, nil},
 	}
 	for _ ,test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			newGarbageCollector(test.state, test.ttlSeconds).collect()
-			if (test.state != nil) &&  len(*test.state) != 0 {
-				t.Fatalf("Expected empty state but have %v records", len(*test.state))
+			if len(test.state) != 0 {
+				t.Fatalf("Expected empty state but have %v records", len(test.state))
 			}
 		})
 	}
-	// clean on empty
-	// clean all records
 }
 
 
@@ -66,7 +63,7 @@ func TestStatefulGCRemoveItem(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("Delete records older than %v seconds", test.ttlSeconds), func(t *testing.T) {
 			s := buildState(test.state)
-			newGarbageCollector(&s, test.ttlSeconds).collect()
+			newGarbageCollector(s, test.ttlSeconds).collect()
 
 			for i, v := range flattenTests {
 				// check if state for key x question exists
