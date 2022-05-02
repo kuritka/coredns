@@ -23,7 +23,7 @@ type state struct {
 	ip        []string
 }
 
-type mstate map[key]map[question]state
+type mstate map[key]map[question]*state
 
 type stateful struct {
 	state mstate
@@ -99,10 +99,8 @@ func (s *stateful) refresh(k key, q question, responseA map[string]dns.RR, respo
 	if !s.state.exists(k,q){
 		s.state.upsert(k,q, state{ip: []string{},timestamp: time.Now()})
 	}
-	var st = s.state[k][q]
-	st.updateState(responseA, responseIPs)
-	st.ip = rotate(st.ip)
-	s.state[k][q] = st
+	s.state[k][q].updateState(responseA, responseIPs)
+	s.state[k][q].ip = rotate(s.state[k][q].ip)
 }
 
 func (s *state) updateState(responseA map[string]dns.RR, responseIPs []string) {
@@ -135,7 +133,7 @@ func (m mstate) exists(k key, q question) (exists bool) {
 // upsert add or insert new item to mstate
 func (m mstate) upsert(k key, q question, s state) {
 	if _, ok := m[k]; !ok {
-		m[k] = make(map[question]state)
+		m[k] = make(map[question]*state)
 	}
-	m[k][q] = s
+	m[k][q] = &s
 }
