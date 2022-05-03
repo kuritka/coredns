@@ -12,7 +12,7 @@ const (
 	emptySubnet   = "empty-subnet"
 )
 
-// <clientIP>_<clientSubnet>
+// clientSubnet
 type key string
 
 // one client could hit many domains
@@ -36,7 +36,6 @@ func newStateful() *stateful {
 	go func() {
 		for range time.Tick(time.Second * garbageCollectionPeriodSeconds) {
 			gc.collect()
-			fmt.Printf("cleaning %v\n", &this.state)
 		}
 	}()
 	return this
