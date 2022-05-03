@@ -69,6 +69,10 @@ identifying the state followed by the json containing the state, see: `_rr_state
 The state must be managed on the client side. The following example creates a simple DNS query that can be consumed by 
 the stateless plugin.
 ```go
+type State struct {
+    IPs    []string `json:"ip, required"`
+}
+
 var state = State{}
 
 func statelessExchange(state State) (r *dns.Msg, err error){
