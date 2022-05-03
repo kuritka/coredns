@@ -52,12 +52,6 @@ myhost.com.             3600    IN      A       200.0.0.3         myhost.com.   
 ```
 
 ### stateless
-```
-. {
-    log
-    roundrobin stateless
-}
-```
 Stateless is useful where you require extremely high scalability and performance, or you cannot use stateful. The state 
 is stored on the CoreDNS client and like in HTTP, you send the records back in the DNS query having the section Extra 
 with the OPT field `EDNS0_LOCAL`. The `stateless` plugin takes care of shuffling (rotation by one position), 
@@ -66,9 +60,42 @@ request. Sending client data is the state in the form of text encoded as a byte-
 identifying the state followed by the json containing the state, see: `_rr_state={"ip":["10.0.0.1","10.2.2.1","10.1.1.2"]}` 
 
 #### Usage
+```
+.:5053 {
+    log
+    roundrobin stateless
+}
+```
+The state must be managed on the client side. The following example creates a simple DNS query that can be consumed by 
+the stateless plugin.
 ```go
-// stateless-client.go
+var state = State{}
 
+func statelessExchange(state State) (r *dns.Msg, err error){
+    json, _ := json.Marshal(state)
+    opt := new(dns.EDNS0_LOCAL)
+    opt.Data = append([]byte("_rr_state="),json...)
+    ext := new(dns.OPT)
+    ext.Hdr.Name = "."
+    ext.Hdr.Rrtype = dns.TypeOPT
+    ext.Option = append(ext.Option, opt)
+    msg := new(dns.Msg)
+    msg.SetQuestion("myhost.com.", dns.TypeA)
+    msg.Extra = append(msg.Extra, ext)
+    return dns.Exchange(msg, fmt.Sprintf("%s:%v", dnsServer, port))
+}
+
+func query(state State) {
+    clog.Info(state)
+    result,_ = statelessExchange(state State)
+    state = resultToState(state)
+}
+
+// [INFO] {[]}
+// [INFO] {[200.0.0.2 200.0.0.3 200.0.0.4 200.0.0.1]}
+// [INFO] {[200.0.0.3 200.0.0.4 200.0.0.1 200.0.0.2]}
+// [INFO] {[200.0.0.4 200.0.0.1 200.0.0.2 200.0.0.3]}
+// [INFO] {[200.0.0.1 200.0.0.2 200.0.0.3 200.0.0.4]}
 ```
 
 ### random
