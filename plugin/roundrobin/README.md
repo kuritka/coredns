@@ -26,7 +26,6 @@ _NOTE: key to the request state is the pair `EDNS0_SUBNET` and request Question,
 
 #### Usage
 ```
-# Corefile 
 .:5053 {
     log
     roundrobin stateful
@@ -45,11 +44,11 @@ myhost.com.             3600    IN      A       200.0.0.3         myhost.com.   
 myhost.com.             3600    IN      A       200.0.0.4         myhost.com.             3600    IN      A       200.0.0.1
 myhost.com.             3600    IN      A       200.0.0.1         myhost.com.             3600    IN      A       200.0.0.2
 
-dig @localhost -p 5053 myhost.com
-myhost.com.             3600    IN      A       200.0.0.4
-myhost.com.             3600    IN      A       200.0.0.1
-myhost.com.             3600    IN      A       200.0.0.2
-myhost.com.             3600    IN      A       200.0.0.3
+dig @localhost -p 5053 myhost.com                                 dig @localhost -p 5053 myhost.com                        
+myhost.com.             3600    IN      A       200.0.0.4         myhost.com.             3600    IN      A       200.0.0.1
+myhost.com.             3600    IN      A       200.0.0.1         myhost.com.             3600    IN      A       200.0.0.2
+myhost.com.             3600    IN      A       200.0.0.2         myhost.com.             3600    IN      A       200.0.0.3
+myhost.com.             3600    IN      A       200.0.0.3         myhost.com.             3600    IN      A       200.0.0.4
 ```
 
 ### stateless
@@ -84,3 +83,26 @@ it does not offer consistent results. Responses may be repeated, and you have no
 addresses will be provided equally. 
 
 #### Usage
+```
+.:5053 {
+    log
+    roundrobin random
+}
+```
+It is clear from the following example that if you work with the first address in the list, for example, you can easily 
+select the same address (200.0.0.1) three times before something else comes up.
+```shell
+# runnig against a local hosts plugin `hosts etchosts` 
+
+dig @localhost -p 5053 myhost.com                                 dig @localhost -p 5053 myhost.com                        
+myhost.com.             3600    IN      A       200.0.0.1         myhost.com.             3600    IN      A       200.0.0.1
+myhost.com.             3600    IN      A       200.0.0.2         myhost.com.             3600    IN      A       200.0.0.2
+myhost.com.             3600    IN      A       200.0.0.3         myhost.com.             3600    IN      A       200.0.0.4
+myhost.com.             3600    IN      A       200.0.0.4         myhost.com.             3600    IN      A       200.0.0.3
+
+dig @localhost -p 5053 myhost.com                                 dig @localhost -p 5053 myhost.com                        
+myhost.com.             3600    IN      A       200.0.0.1         myhost.com.             3600    IN      A       200.0.0.3
+myhost.com.             3600    IN      A       200.0.0.3         myhost.com.             3600    IN      A       200.0.0.1
+myhost.com.             3600    IN      A       200.0.0.2         myhost.com.             3600    IN      A       200.0.0.4
+myhost.com.             3600    IN      A       200.0.0.4         myhost.com.             3600    IN      A       200.0.0.2
+```
