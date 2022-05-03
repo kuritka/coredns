@@ -41,6 +41,11 @@ is stored on the CoreDNS client and like in HTTP, you send the records back in t
 with the OPT field `EDNS0_LOCAL`. The `stateless` plugin takes care of shuffling (rotation by one position), 
 clears non-existing records and adds new ones. As in HTTP, the client must store the response in its memory for the next request.
 
+```go
+// stateless-client.go
+
+```
+
 ### random
 ```
 . {
