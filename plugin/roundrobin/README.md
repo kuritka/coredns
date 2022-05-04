@@ -55,7 +55,7 @@ myhost.com.             3600    IN      A       200.0.0.3         myhost.com.   
 ### stateless
 Stateless is useful where you require extremely high scalability, customization, or you cannot use stateful. The state 
 is stored on the client and like in HTTP, you send the records back to CoreDNS in the DNS query having the section Extra 
-with the `EDNS0_LOCAL` field (see GO example below). The `stateless` plugin takes care of shuffling (rotation by one position), 
+records filled. ( `EDNS0_LOCAL`, see GO example below). The `stateless` plugin takes care of shuffling, 
 clears non-existing records and adds new ones. As in HTTP, the client must store the response in its memory for the next 
 request. Sending client data must be in form of text encoded as a byte-array where `_rr_state=` is a constant 
 identifying the state followed by the json containing the client state, see: `_rr_state={"ip":["10.0.0.1","10.2.2.1","10.1.1.2"]}` 
@@ -71,7 +71,7 @@ The state must be managed on the client side. The following example creates a si
 the stateless plugin.
 ```go
 type State struct {
-    IPs    []string `json:"ip, required"`
+    IPs    []string `json:"ip"`
 }
 
 func statelessExchange(state State) (r *dns.Msg, err error){
@@ -92,7 +92,7 @@ func statelessExchange(state State) (r *dns.Msg, err error){
 ```
 # runnig against a local hosts plugin `hosts etchosts` 
 
-_rr_state={"ip":null}                                                 _rr_state={"ip":["200.0.0.2","200.0.0.3","200.0.0.4","200.0.0.1"]}
+_rr_state={"ip":[]}                                                 _rr_state={"ip":["200.0.0.2","200.0.0.3","200.0.0.4","200.0.0.1"]}
 myhost.com.   3600    IN      A       200.0.0.2                       myhost.com.   3600    IN      A       200.0.0.3          
 myhost.com.   3600    IN      A       200.0.0.3                       myhost.com.   3600    IN      A       200.0.0.4          
 myhost.com.   3600    IN      A       200.0.0.4                       myhost.com.   3600    IN      A       200.0.0.1          
