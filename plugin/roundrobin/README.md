@@ -93,14 +93,12 @@ func statelessExchange(state State) (r *dns.Msg, err error){
 # runnig against a local hosts plugin `hosts etchosts` 
 
 _rr_state={"ip":null}                                                 _rr_state={"ip":["200.0.0.2","200.0.0.3","200.0.0.4","200.0.0.1"]}
-# response                                                            # response
 myhost.com.   3600    IN      A       200.0.0.2                       myhost.com.   3600    IN      A       200.0.0.3          
 myhost.com.   3600    IN      A       200.0.0.3                       myhost.com.   3600    IN      A       200.0.0.4          
 myhost.com.   3600    IN      A       200.0.0.4                       myhost.com.   3600    IN      A       200.0.0.1          
 myhost.com.   3600    IN      A       200.0.0.1                       myhost.com.   3600    IN      A       200.0.0.2          
 
 _rr_state={"ip":["200.0.0.3","200.0.0.4","200.0.0.1","200.0.0.2"]}    _rr_state={"ip":["200.0.0.4","200.0.0.1","200.0.0.2","200.0.0.3"]}
-# response                                                            # response
 myhost.com.   3600    IN      A       200.0.0.4                       myhost.com.   3600    IN      A       200.0.0.1          
 myhost.com.   3600    IN      A       200.0.0.1                       myhost.com.   3600    IN      A       200.0.0.2          
 myhost.com.   3600    IN      A       200.0.0.2                       myhost.com.   3600    IN      A       200.0.0.3          
