@@ -73,8 +73,6 @@ type State struct {
     IPs    []string `json:"ip, required"`
 }
 
-var state = State{}
-
 func statelessExchange(state State) (r *dns.Msg, err error){
     json, _ := json.Marshal(state)
     opt := new(dns.EDNS0_LOCAL)
@@ -88,19 +86,23 @@ func statelessExchange(state State) (r *dns.Msg, err error){
     msg.Extra = append(msg.Extra, ext)
     return dns.Exchange(msg, fmt.Sprintf("%s:%v", dnsServer, port))
 }
-
-func query(state State) {
-    clog.Info(state)
-    result,_ = statelessExchange(state State)
-    state = resultToState(state)
-}
-
-// [INFO] {[]}
-// [INFO] {[200.0.0.2 200.0.0.3 200.0.0.4 200.0.0.1]}
-// [INFO] {[200.0.0.3 200.0.0.4 200.0.0.1 200.0.0.2]}
-// [INFO] {[200.0.0.4 200.0.0.1 200.0.0.2 200.0.0.3]}
-// [INFO] {[200.0.0.1 200.0.0.2 200.0.0.3 200.0.0.4]}
 ```
+
+```
+_rr_state={"ip":null}                                                 _rr_state={"ip":["200.0.0.2","200.0.0.3","200.0.0.4","200.0.0.1"]}
+myhost.com.   3600    IN      A       200.0.0.2                       myhost.com.   3600    IN      A       200.0.0.3          
+myhost.com.   3600    IN      A       200.0.0.3                       myhost.com.   3600    IN      A       200.0.0.4          
+myhost.com.   3600    IN      A       200.0.0.4                       myhost.com.   3600    IN      A       200.0.0.1          
+myhost.com.   3600    IN      A       200.0.0.1                       myhost.com.   3600    IN      A       200.0.0.2          
+
+_rr_state={"ip":["200.0.0.3","200.0.0.4","200.0.0.1","200.0.0.2"]}    _rr_state={"ip":["200.0.0.4","200.0.0.1","200.0.0.2","200.0.0.3"]}
+myhost.com.   3600    IN      A       200.0.0.4                       myhost.com.   3600    IN      A       200.0.0.1          
+myhost.com.   3600    IN      A       200.0.0.1                       myhost.com.   3600    IN      A       200.0.0.2          
+myhost.com.   3600    IN      A       200.0.0.2                       myhost.com.   3600    IN      A       200.0.0.3          
+myhost.com.   3600    IN      A       200.0.0.3                       myhost.com.   3600    IN      A       200.0.0.4          
+
+```
+
 
 ### random
 ```
