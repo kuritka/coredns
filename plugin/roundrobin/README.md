@@ -1,7 +1,7 @@
 # RoundRobin
 
 ## Name
-*roundrobin* - plugin provides several round-robin strategies that mix A and AAAA 
+*roundrobin* - plugin provides several round-robin strategies that shuffle A and AAAA 
 records in a DNS response.
 
 ## Description
@@ -19,10 +19,11 @@ section before the roundrobin applied.
 
 ## RoundRobin
 ### stateful
-Stateful will probably be the strategy you expect from a round-robin. Each hit rotates the A or AAAA records 
+Stateful will probably be the strategy you expect from a round-robin. Each query rotates the A or AAAA records 
 by one position. The RoundRobin plugin remembers the positions of the last query for ten minutes and manages changes 
 to the answers: clears non-existing records, adds new ones, shuffling (rotation by one position) and garbage collection.
-_NOTE: key to the request state is the pair `EDNS0_SUBNET` and request Question, [see more](https://en.wikipedia.org/wiki/EDNS_Client_Subnet)._
+
+_NOTE: key to the request state is the pair `EDNS0_SUBNET` and request `domain name`, [see more](https://en.wikipedia.org/wiki/EDNS_Client_Subnet)._
 
 #### Usage
 ```
@@ -31,7 +32,7 @@ _NOTE: key to the request state is the pair `EDNS0_SUBNET` and request Question,
     roundrobin stateful
 }
 ```
-After you run the dig command repeatedly, the records for the `myhosts.com` domain rotate. The roundrobin plugin can 
+After you run the `dig` command repeatedly, the records for the `myhosts.com` domain rotate. The roundrobin plugin can 
 handle the number of records or individual records changing. In addition, garbage collector clears the records every ten 
 minutes of inactivity.
 
@@ -52,12 +53,12 @@ myhost.com.             3600    IN      A       200.0.0.3         myhost.com.   
 ```
 
 ### stateless
-Stateless is useful where you require extremely high scalability and performance, or you cannot use stateful. The state 
-is stored on the CoreDNS client and like in HTTP, you send the records back in the DNS query having the section Extra 
-with the OPT field `EDNS0_LOCAL`. The `stateless` plugin takes care of shuffling (rotation by one position), 
+Stateless is useful where you require extremely high scalability, customization, or you cannot use stateful. The state 
+is stored on the client and like in HTTP, you send the records back to CoreDNS in the DNS query having the section Extra 
+with the `EDNS0_LOCAL` field (see GO example below). The `stateless` plugin takes care of shuffling (rotation by one position), 
 clears non-existing records and adds new ones. As in HTTP, the client must store the response in its memory for the next 
-request. Sending client data is the state in the form of text encoded as a byte-array where `_rr_state=` is a constant 
-identifying the state followed by the json containing the state, see: `_rr_state={"ip":["10.0.0.1","10.2.2.1","10.1.1.2"]}` 
+request. Sending client data must be in form of text encoded as a byte-array where `_rr_state=` is a constant 
+identifying the state followed by the json containing the client state, see: `_rr_state={"ip":["10.0.0.1","10.2.2.1","10.1.1.2"]}` 
 
 #### Usage
 ```
@@ -89,20 +90,22 @@ func statelessExchange(state State) (r *dns.Msg, err error){
 ```
 
 ```
+# runnig against a local hosts plugin `hosts etchosts` 
+
 _rr_state={"ip":null}                                                 _rr_state={"ip":["200.0.0.2","200.0.0.3","200.0.0.4","200.0.0.1"]}
+# response                                                            # response
 myhost.com.   3600    IN      A       200.0.0.2                       myhost.com.   3600    IN      A       200.0.0.3          
 myhost.com.   3600    IN      A       200.0.0.3                       myhost.com.   3600    IN      A       200.0.0.4          
 myhost.com.   3600    IN      A       200.0.0.4                       myhost.com.   3600    IN      A       200.0.0.1          
 myhost.com.   3600    IN      A       200.0.0.1                       myhost.com.   3600    IN      A       200.0.0.2          
 
 _rr_state={"ip":["200.0.0.3","200.0.0.4","200.0.0.1","200.0.0.2"]}    _rr_state={"ip":["200.0.0.4","200.0.0.1","200.0.0.2","200.0.0.3"]}
+# response                                                            # response
 myhost.com.   3600    IN      A       200.0.0.4                       myhost.com.   3600    IN      A       200.0.0.1          
 myhost.com.   3600    IN      A       200.0.0.1                       myhost.com.   3600    IN      A       200.0.0.2          
 myhost.com.   3600    IN      A       200.0.0.2                       myhost.com.   3600    IN      A       200.0.0.3          
 myhost.com.   3600    IN      A       200.0.0.3                       myhost.com.   3600    IN      A       200.0.0.4          
-
 ```
-
 
 ### random
 ```
