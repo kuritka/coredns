@@ -15,6 +15,6 @@ func NewStateful() *Stateful {
 	}
 }
 
-func (s *Stateful) Shuffle(req request.Request, res *dns.Msg) (rr []dns.RR, err error) {
+func (s *Stateful) Shuffle(req request.Request, res *dns.Msg) ([]dns.RR, error) {
 	return s.state.update(&req, res)
 }
