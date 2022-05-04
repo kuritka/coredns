@@ -17,7 +17,7 @@ section before the roundrobin applied.
 - [stateless](#stateless)
 - [random](#random)
 
-## RoundRobin
+## Syntax
 ### stateful
 Stateful will probably be the strategy you expect from a round-robin. Each query rotates the A or AAAA records 
 by one position. The RoundRobin plugin remembers the positions of the last query for ten minutes and manages changes 
@@ -25,7 +25,7 @@ to the answers: clears non-existing records, adds new ones, shuffling (rotation 
 
 _NOTE: key to the request state is the pair `EDNS0_SUBNET` and request `domain name`, [see more](https://en.wikipedia.org/wiki/EDNS_Client_Subnet)._
 
-#### Usage
+#### Example
 ```
 .:5053 {
     log
@@ -60,7 +60,7 @@ clears non-existing records and adds new ones. As in HTTP, the client must store
 request. Sending client data must be in form of text encoded as a byte-array where `_rr_state=` is a constant 
 identifying the state followed by the json containing the client state, see: `_rr_state={"ip":["10.0.0.1","10.2.2.1","10.1.1.2"]}` 
 
-#### Usage
+#### Example
 ```
 .:5053 {
     log
@@ -116,7 +116,7 @@ Random is the simplest strategy available. It is simple, fast, and does not work
 it does not offer consistent results. Responses may be repeated, and you have no guarantee that the returned IP 
 addresses will be provided equally. 
 
-#### Usage
+#### Example
 ```
 .:5053 {
     log

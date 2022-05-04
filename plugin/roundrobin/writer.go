@@ -36,6 +36,7 @@ func (r *MessageWriter) WriteMsg(msg *dns.Msg) error {
 	}
 
 	if answer, err := r.strategy.Shuffle(r.state, msg); err == nil {
+		log.Warningf("roundrobin: not shuffling records; %s", err)
 		msg.Answer = answer
 	}
 
