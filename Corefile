@@ -1,5 +1,5 @@
 .:5053 {
     hosts etchosts
     log
-    roundrobin stateless
+    roundrobin stateful
 }

@@ -1,4 +1,4 @@
-module github.com/kuritka/coredns
+module github.com/coredns/coredns
 
 go 1.17
 
