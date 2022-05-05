@@ -12,7 +12,6 @@ package dnsserver
 var Directives = []string{
 	"metadata",
 	"geoip",
-	"k8s_crd",
 	"cancel",
 	"tls",
 	"reload",
@@ -61,4 +60,6 @@ var Directives = []string{
 	"whoami",
 	"on",
 	"sign",
+	"k8s_crd",
+
 }
