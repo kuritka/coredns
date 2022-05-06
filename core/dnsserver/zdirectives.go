@@ -47,8 +47,7 @@ var Directives = []string{
 	"route53",
 	"azure",
 	"clouddns",
-	"k8s_external",
-	"kubernetes",
+	"k8s_crd",
 	"file",
 	"auto",
 	"secondary",
@@ -60,6 +59,4 @@ var Directives = []string{
 	"whoami",
 	"on",
 	"sign",
-	"k8s_crd",
-
 }
