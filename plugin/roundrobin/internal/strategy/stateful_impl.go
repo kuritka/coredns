@@ -141,3 +141,12 @@ func (m mstate) upsert(k key, q question, s state) {
 	}
 	m[k][q] = &s
 }
+
+func (m mstate) String() (out string) {
+	for k, v := range m {
+		for q, s := range v {
+			out += fmt.Sprintf("[%v][%v]{ip: %v}\n",k,q, s.ip)
+		}
+	}
+	return
+}
