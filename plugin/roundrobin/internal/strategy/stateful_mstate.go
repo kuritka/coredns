@@ -54,7 +54,7 @@ func (m mstate) String() (out string) {
 	for k, v := range m {
 		for q, a := range v {
 			for t, s := range a {
-				out += fmt.Sprintf("[%v][%v][%s]{ips: [%v]} \n",k,q, t, s.ip)
+				out += fmt.Sprintf("[%v][%v][%s]{ips: %v} \n",k,q, t, s.ip)
 			}
 		}
 	}
