@@ -202,11 +202,11 @@ func TestRoundRobinStatefulState(t *testing.T) {
 
 			// assert
 			ipMap := ipsToSet(getIPs(test.rr))
-			if len(s.state.state[key(test.expectedKey)][question(test.question)].ip) != len(getIPs(test.rr)) {
+			if len(s.state.state[key(test.expectedKey)][question(test.question)][dnsTypes.A].ip) != len(getIPs(test.rr)) {
 				t.Errorf("the number of records in the test (%v) and the state (%v) do not match.",
-					len(test.rr), len(s.state.state[key(test.from)][question(test.question)].ip))
+					len(test.rr), len(s.state.state[key(test.from)][question(test.question)][dnsTypes.A].ip))
 			}
-			for _, ip := range s.state.state[key(test.expectedKey)][question(test.question)].ip {
+			for _, ip := range s.state.state[key(test.expectedKey)][question(test.question)][dnsTypes.A].ip {
 				if !ipMap[ip] {
 					t.Errorf("Can't find %s for state[%s][%s] ", ip, test.from, test.question)
 				}
@@ -317,6 +317,146 @@ func TestRoundRobinStatefulDNSRecordsChange(t *testing.T) {
 				t.Errorf("The stateful rotation is not working. Expecting %v but got %v.", test.expectedResult, getIPs(clientState))
 			}
 
+		})
+	}
+}
+
+
+func TestResolverBehaviorIPv4asFallbackOfIPv6(t *testing.T) {
+	tests := []struct {
+		name           string
+		question       string
+		from           string
+		dnsType		   uint16
+		rr             []dns.RR
+		expectedResult []string
+	}{
+		{"Resolver makes automatically AAAA request first but has no records",
+			"alpha.cloud.example.com.", "200.10.0.0", dns.TypeAAAA,
+			[]dns.RR{},
+			[]string{},
+		},
+		{"Empty result fallbacks to A request and retrieves records in right order",
+			"alpha.cloud.example.com.", "200.10.0.0", dns.TypeA,
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
+			},
+			[]string{"10.240.0.2", "10.240.0.3", "10.240.0.1"},
+		},
+		{"Resolver makes again AAAA request again and has no records",
+			"alpha.cloud.example.com.", "200.10.0.0",dns.TypeAAAA,
+			[]dns.RR{},
+			[]string{},
+		},
+		{"Empty result fallbacks to A request and retrieves records in right order",
+			"alpha.cloud.example.com.", "200.10.0.0",dns.TypeA,
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
+			},
+			[]string{"10.240.0.3", "10.240.0.1", "10.240.0.2"},
+		},
+		{"Resolver makes again AAAA request again and has no records",
+			"alpha.cloud.example.com.", "200.10.0.0",dns.TypeAAAA,
+			[]dns.RR{},
+			[]string{},
+		},
+		{"Someone makes  AAAA request and has no records",
+			"alpha.cloud.example.com.", "200.10.0.0",dns.TypeAAAA,
+			[]dns.RR{},
+			[]string{},
+		},
+		{"Empty result fallbacks to A request and retrieves records in right order",
+			"alpha.cloud.example.com.", "200.10.0.0",dns.TypeA,
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
+			},
+			[]string{"10.240.0.1", "10.240.0.2", "10.240.0.3"},
+		},
+		{"Doing A request only and retrieves records in right order",
+			"alpha.cloud.example.com.", "200.10.0.0",dns.TypeA,
+			[]dns.RR{
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.1"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.2"),
+				test.A("alpha.cloud.example.com.		300	IN	A			10.240.0.3"),
+			},
+			[]string{"10.240.0.2", "10.240.0.3", "10.240.0.1"},
+		},
+		{"Resolver makes AAAA request and records successfully retrieved",
+			"beta.cloud.example.com.", "200.11.0.0",dns.TypeAAAA,
+			[]dns.RR{
+				test.AAAA("beta.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8a"),
+				test.AAAA("beta.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8b"),
+				test.AAAA("beta.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8c"),
+			},
+			[]string{"4001:a1:1014::8b", "4001:a1:1014::8c", "4001:a1:1014::8a"},
+		},
+		{"Resolver makes AAAA request and records successfully retrieved",
+			"beta.cloud.example.com.", "200.11.0.0",dns.TypeAAAA,
+			[]dns.RR{
+				test.AAAA("beta.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8a"),
+				test.AAAA("beta.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8b"),
+				test.AAAA("beta.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8c"),
+			},
+			[]string{"4001:a1:1014::8c", "4001:a1:1014::8a", "4001:a1:1014::8b"},
+		},
+		{"Someone makes A request and records successfully retrieved",
+			"beta.cloud.example.com.", "200.11.0.0",dns.TypeA,
+			[]dns.RR{
+				test.A("beta.cloud.example.com.		300	IN	A			1.1.1.1"),
+				test.A("beta.cloud.example.com.		300	IN	A			1.1.1.2"),
+			},
+			[]string{"1.1.1.2", "1.1.1.1"},
+		},
+		{"Resolver makes AAAA request and records successfully retrieved",
+			"beta.cloud.example.com.", "200.11.0.0",dns.TypeAAAA,
+			[]dns.RR{
+				test.AAAA("beta.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8a"),
+				test.AAAA("beta.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8b"),
+				test.AAAA("beta.cloud.example.com.		300	IN	AAAA			4001:a1:1014::8c"),
+			},
+			[]string{"4001:a1:1014::8a", "4001:a1:1014::8b", "4001:a1:1014::8c"},
+		},
+		{"Someone makes A request and records successfully retrieved",
+			"beta.cloud.example.com.", "200.11.0.0",dns.TypeA,
+			[]dns.RR{
+				test.A("beta.cloud.example.com.		300	IN	A			1.1.1.1"),
+				test.A("beta.cloud.example.com.		300	IN	A			1.1.1.2"),
+			},
+			[]string{"1.1.1.1", "1.1.1.2"},
+		},
+	}
+	s := NewStateful()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// arrange
+			m := newMid()
+			m.SetQuestion(test.question, test.dnsType)
+			m.SetSubnet(test.from)
+			for _, a := range test.rr {
+				m.AddResponseAnswer(a)
+			}
+
+			//act
+			clientState, e := s.Shuffle(m.req, m.res)
+
+			// assert
+			if e != nil {
+				t.Errorf("unexpepcted error %s", e)
+			}
+
+			if len(test.rr) != len(clientState) {
+				t.Errorf("The stateful retrieved different number of records. Expected %v got %v", len(test.rr), len(clientState))
+			}
+
+			if fmt.Sprintf("%v", getIPs(clientState)) != fmt.Sprintf("%v", test.expectedResult) {
+				t.Errorf("The stateful rotation is not working. Expecting %v but got %v.", test.expectedResult, getIPs(clientState))
+			}
 		})
 	}
 }

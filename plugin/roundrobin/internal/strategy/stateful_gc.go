@@ -24,10 +24,12 @@ func newGarbageCollector(state mstate, ttlSeconds int) *garbageCollector {
 
 func (gc *garbageCollector) collect() {
 	for k, qm := range gc.state {
-		for q, s := range qm {
-			// remove death states for death questions
-			if s.timestamp.Before(time.Now().Add(-gc.ttlSeconds * time.Second)) {
-				delete(qm, q)
+		for q, a := range qm {
+			for _, s := range a {
+				// remove death states for death questions
+				if s.timestamp.Before(time.Now().Add(-gc.ttlSeconds * time.Second)) {
+					delete(qm, q)
+				}
 			}
 		}
 		// remove key, if contains 0 items

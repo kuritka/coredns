@@ -12,19 +12,6 @@ const (
 	emptySubnet   = "empty-subnet"
 )
 
-// clientSubnet
-type key string
-
-// one client could hit many domains
-type question string
-
-type state struct {
-	timestamp time.Time
-	ip        []string
-}
-
-type mstate map[key]map[question]*state
-
 type stateful struct {
 	state mstate
 }
@@ -60,12 +47,13 @@ func (s *stateful) update(req *request.Request, res *dns.Msg) (rr []dns.RR, err 
 func (s *stateful) updateState(req *request.Request, res *dns.Msg) (answer []dns.RR, err error) {
 	q := question(req.Req.Question[0].Name)
 	k := s.key(req)
-	responseA, responseIPs, responseNoA := parseAnswerSection(res.Answer)
-	s.refresh(k, q, responseA, responseIPs)
-	for _, ip := range s.state[k][q].ip {
-		answer = append(answer, responseA[ip])
+	t := toDnsType(req.Req.Question[0].Qtype)
+	responseIPsTable, responseIPs, responseNoIPs := parseAnswerSection(res.Answer)
+	s.refresh(k, q, t, responseIPsTable, responseIPs)
+	for _, ip := range s.state[k][q][t].ip {
+		answer = append(answer, responseIPsTable[ip])
 	}
-	return append(answer, responseNoA...), nil
+	return append(answer, responseNoIPs...), nil
 }
 
 func (s *stateful) key(req *request.Request) key {
@@ -94,12 +82,12 @@ func (s *stateful) readSubnet(req *dns.Msg) string {
 	return missingSubnet
 }
 
-func (s *stateful) refresh(k key, q question, responseA map[string]dns.RR, responseIPs []string) {
-	if !s.state.exists(k, q) {
-		s.state.upsert(k, q, state{ip: []string{}, timestamp: time.Now()})
+func (s *stateful) refresh(k key, q question, t dnsType, responseA map[string]dns.RR, responseIPs []string) {
+	if !s.state.exists(k, q, t) {
+		s.state.upsert(k, q, t,  state{ip: []string{}, timestamp: time.Now()})
 	}
-	s.state[k][q].updateState(responseA, responseIPs)
-	s.state[k][q].rotateIPs()
+	s.state[k][q][t].updateState(responseA, responseIPs)
+	s.state[k][q][t].rotateIPs()
 }
 
 func (s *state) updateState(responseA map[string]dns.RR, responseIPs []string) {
@@ -125,28 +113,4 @@ func (s *state) updateState(responseA map[string]dns.RR, responseIPs []string) {
 
 func (s *state) rotateIPs() {
 	s.ip = rotate(s.ip)
-}
-
-func (m mstate) exists(k key, q question) (exists bool) {
-	if _, ok := m[k]; ok {
-		_, exists = m[k][q]
-	}
-	return
-}
-
-// upsert add or insert new item to mstate
-func (m mstate) upsert(k key, q question, s state) {
-	if _, ok := m[k]; !ok {
-		m[k] = make(map[question]*state)
-	}
-	m[k][q] = &s
-}
-
-func (m mstate) String() (out string) {
-	for k, v := range m {
-		for q, s := range v {
-			out += fmt.Sprintf("[%v][%v]{ip: %v}\n",k,q, s.ip)
-		}
-	}
-	return
 }

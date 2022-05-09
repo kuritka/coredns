@@ -12,8 +12,8 @@ import (
 // handlovat, kdyz udelam A a AAAA request
 func TestStatefulGCCleaning(t *testing.T) {
 	flattenTests := []stateFlatten{
-		{"10.20.30.40", "test.example.com.", time.Now().Add(time.Hour * -5), []string{"10.10.10.10"}},
-		{"10.20.30.40", "alpha.example.com.", time.Now().Add(time.Minute * -5), []string{"10.10.10.10", "20.20.20.20"}},
+		{"10.20.30.40", "test.example.com.", dnsTypes.A, time.Now().Add(time.Hour * -5), []string{"10.10.10.10"}},
+		{"10.20.30.40", "alpha.example.com.", dnsTypes.A,time.Now().Add(time.Minute * -5), []string{"10.10.10.10", "20.20.20.20"}},
 	}
 	tests := []struct {
 		name       string
@@ -36,19 +36,20 @@ func TestStatefulGCCleaning(t *testing.T) {
 
 func TestStatefulGCCleaningLive(t *testing.T) {
 	flattenTests := []stateFlatten{
-		{"10.20.30.40", "alpha.example.com.", time.Now().Add(time.Hour * -5), []string{"10.10.10.10", "20.20.20.20"}},
+		{"10.20.30.40", "alpha.example.com.", dnsTypes.A,time.Now().Add(time.Hour * -5), []string{"10.10.10.10", "20.20.20.20"}},
 	}
 	tests := []struct {
 		name     string
 		question string
+		dnstype  dnsType
 		from     string
 		answer   []dns.RR
 	}{
-		{"Retrieving records with old timestamp", "alpha.example.com.", "10.20.30.40",
+		{"Retrieving records with old timestamp", "alpha.example.com.", dnsTypes.A,"10.20.30.40",
 			[]dns.RR{
 				test.A("alpha.cloud.example.com.		300	IN	A			10.10.10.10"),
 				test.A("alpha.cloud.example.com.		300	IN	A			20.20.20.20")}},
-		{"Call once again", "alpha.example.com.", "10.20.30.40",
+		{"Call once again", "alpha.example.com.", dnsTypes.A,"10.20.30.40",
 			[]dns.RR{
 				test.A("alpha.cloud.example.com.		300	IN	A			10.10.10.10"),
 				test.A("alpha.cloud.example.com.		300	IN	A			20.20.20.20")}},
@@ -62,10 +63,10 @@ func TestStatefulGCCleaningLive(t *testing.T) {
 			m.SetQuestion(test.question, dns.TypeA)
 			m.SetSubnet(test.from)
 			m.res.Answer = test.answer
-			ts := s.state.state[key(test.from)][question(test.question)].timestamp
+			ts := s.state.state[key(test.from)][question(test.question)][test.dnstype].timestamp
 			_, _ = s.Shuffle(m.req, m.res)
 
-			if !s.state.state[key(test.from)][question(test.question)].timestamp.After(ts) {
+			if !s.state.state[key(test.from)][question(test.question)][test.dnstype].timestamp.After(ts) {
 				t.Fatalf("timestamp has not been properly set")
 			}
 		})
@@ -74,11 +75,11 @@ func TestStatefulGCCleaningLive(t *testing.T) {
 
 func TestStatefulGCRemoveItem(t *testing.T) {
 	flattenTests := []stateFlatten{
-		{"10.20.30.40", "test.example.com.", time.Now().Add(time.Hour * -5), []string{"10.10.10.10"}},
-		{"10.20.30.40", "alpha.example.com.", time.Now().Add(time.Minute * -5), []string{"10.10.10.10", "20.20.20.20"}},
-		{"10.20.30.40", "beta.example.com.", time.Now().Add(time.Second * -5), []string{}},
-		{"10.20.30.40", "beta.example.com.", time.Now().Add(time.Second * -1), []string{"11.111.111.111", "222.222.222.333"}},
-		{"11.11.11.11", "gc.test.com.", time.Now(), []string{"10.10.10.10"}},
+		{"10.20.30.40", "test.example.com.", dnsTypes.A,time.Now().Add(time.Hour * -5), []string{"10.10.10.10"}},
+		{"10.20.30.40", "alpha.example.com.", dnsTypes.A,time.Now().Add(time.Minute * -5), []string{"10.10.10.10", "20.20.20.20"}},
+		{"10.20.30.40", "beta.example.com.", dnsTypes.A,time.Now().Add(time.Second * -5), []string{}},
+		{"10.20.30.40", "beta.example.com.", dnsTypes.A,time.Now().Add(time.Second * -1), []string{"11.111.111.111", "222.222.222.333"}},
+		{"11.11.11.11", "gc.test.com.", dnsTypes.A,time.Now(), []string{"10.10.10.10"}},
 	}
 
 	tests := []struct {
@@ -100,7 +101,7 @@ func TestStatefulGCRemoveItem(t *testing.T) {
 
 			for i, v := range flattenTests {
 				// check if state for key x question exists
-				exists := s.exists(key(v.key), question(v.question))
+				exists := s.exists(key(v.key), question(v.question), v.t)
 
 				if test.survivalRowIndexes[i] != exists {
 					t.Fatalf("Inconsistent state. Check if %v should be there or not ", v)

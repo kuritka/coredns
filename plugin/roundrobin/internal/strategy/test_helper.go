@@ -100,6 +100,7 @@ var filterAandAAAA = func(answers []dns.RR) (rr []dns.RR) {
 type stateFlatten struct {
 	key       string
 	question  string
+	t         dnsType
 	timestamp time.Time
 	ips       []string
 }
@@ -107,7 +108,7 @@ type stateFlatten struct {
 func buildState(tests []stateFlatten) mstate {
 	m := make(mstate)
 	for _, test := range tests {
-		m.upsert(key(test.key), question(test.question), state{test.timestamp, test.ips})
+		m.upsert(key(test.key), question(test.question), test.t, state{test.timestamp, test.ips})
 	}
 	return m
 }
