@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-// po tom co updatnu record, tak musim zmenit timestamp => timestamp check!
-// handlovat, kdyz udelam A a AAAA request
 func TestStatefulGCCleaning(t *testing.T) {
 	flattenTests := []stateFlatten{
 		{"10.20.30.40", "test.example.com.", dnsTypes.A, time.Now().Add(time.Hour * -5), []string{"10.10.10.10"}},
