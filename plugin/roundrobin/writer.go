@@ -37,6 +37,8 @@ func (r *MessageWriter) WriteMsg(msg *dns.Msg) error {
 
 	if answer, err := r.strategy.Shuffle(r.state, msg); err == nil {
 		msg.Answer = answer
+	} else {
+		log.Errorf("RoundRobin plugin failed %s.", err)
 	}
 
 	return r.ResponseWriter.WriteMsg(msg)
