@@ -65,4 +65,4 @@ deploy: build image image-push apply
 push-remote: build image
 	docker push $(ORG_NAME)/$(PROVIDER_NAME):$(VERSION)
 
-VERSION=v0.0.12
+VERSION=v0.0.15

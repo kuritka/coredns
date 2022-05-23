@@ -11,7 +11,7 @@ CoreDNS-002 has been [released](https://github.com/coredns/coredns/releases)!
 
 CoreDNS is a DNS server that chains plugins, where each plugin implements a DNS feature.
 
-## What is New
+## What is New  
 
 * `-port` was renamed to `-dns.port` to avoid clashing with Caddy's `-port` (which was renamed to
   `http.port`).

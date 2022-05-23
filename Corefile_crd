@@ -1,0 +1,10 @@
+.:8053 {
+    hosts etchosts
+    log
+    roundrobin stateful
+    k8s_crd {
+        resources DNSEndpoint
+        filter k8gb.absa.oss/dnstype=local
+        negttl 300
+    }
+}
